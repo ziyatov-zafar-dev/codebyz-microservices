@@ -17,6 +17,7 @@ import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -43,31 +44,29 @@ public class JwtTokenService {
     // 🔹 CLAIMS PARSE
     // =========================
     public Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
 
     // =========================
     // 🔹 ACCESS TOKEN (FAOL)
     // =========================
-    public String createAccessToken(User user, String jti) {
+    public String createAccessToken(User user, String deviceId, String jti) {
         Instant now = Instant.now();
         Instant exp = now.plus(props.getAccessTokenMinutes(), ChronoUnit.MINUTES);
 
-        return Jwts.builder()
-                .setSubject(user.getId().toString())
-                .setId(jti) // 🔥 JTI
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(exp))
+        return Jwts.builder().setSubject(user.getId().toString())          // userId
+                .setId(jti)                                   // jti
+                .setIssuedAt(Date.from(now)).setExpiration(Date.from(exp))
+
+                // ===== CUSTOM CLAIMS =====
                 .claim("username", user.getUsername())
-                .claim("role", user.getRole().name())
-                .claim("tv", user.getTokenVersion()) // 🔥 TOKEN VERSION
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+                .claim("roles", List.of(user.getRole().name())) // 🔥 LIST
+                .claim("tokenVersion", user.getTokenVersion())  // 🔥 readable
+                .claim("deviceId", deviceId)                    // 🔥 device session
+
+                .signWith(key, SignatureAlgorithm.HS256).compact();
     }
+
 
     // ❌ BU METODNI O‘CHIRISH SHART
     // createAccessToken(User user) — ISHLATILMAYDI
@@ -79,36 +78,30 @@ public class JwtTokenService {
         Instant now = Instant.now();
         Instant exp = now.plus(props.getRefreshTokenDays(), ChronoUnit.DAYS);
 
-        return Jwts.builder()
-                .setSubject(user.getId().toString())
-                .setId(jti)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(exp))
-                .claim("type", "refresh")
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+        return Jwts.builder().setSubject(user.getId().toString()).setId(jti).setIssuedAt(Date.from(now)).setExpiration(Date.from(exp)).claim("type", "refresh").signWith(key, SignatureAlgorithm.HS256).compact();
     }
 
     // =========================
     // 🔹 ACCESS TOKEN PARSE
     // =========================
     public JwtUser parseAccessToken(String token) {
+
         Claims claims = parseClaims(token);
 
         UUID userId = UUID.fromString(claims.getSubject());
         String username = claims.get("username", String.class);
-        String roleStr = claims.get("role", String.class);
-        Integer tokenVersion = claims.get("tv", Integer.class);
+        String roleStr = claims.get("roles", List.class).get(0).toString();
+        Integer tokenVersion = claims.get("tokenVersion", Integer.class);
+        String deviceId = claims.get("deviceId", String.class);
 
+//        if (tokenVersion==null)tokenVersion=0;
         if (tokenVersion == null) {
             throw new RuntimeException("Token version missing");
         }
 
-        UserRole role = roleStr == null
-                ? UserRole.STUDENT
-                : UserRole.valueOf(roleStr);
+        UserRole role = roleStr == null ? UserRole.STUDENT : UserRole.valueOf(roleStr);
 
-        return new JwtUser(userId, username, role, tokenVersion);
+        return new JwtUser(userId, username, role, tokenVersion, deviceId);
     }
 
     public AuthTokensResponse generateTokens(User user, String deviceId) {
@@ -117,7 +110,7 @@ public class JwtTokenService {
         String jti = UUID.randomUUID().toString();
 
         // 2️⃣ TOKENLARNI YARATAMIZ
-        String accessToken = createAccessToken(user, jti);
+        String accessToken = createAccessToken(user, deviceId,jti);
         String refreshToken = createRefreshToken(user, jti);
 
         // 3️⃣ REFRESH TOKENNI DB’GA SAQLAYMIZ
@@ -126,9 +119,7 @@ public class JwtTokenService {
         rt.setDeviceId(deviceId);
         rt.setJti(jti);
         rt.setRevoked(false);
-        rt.setExpiresAt(
-                Instant.now().plus(props.getRefreshTokenDays(), ChronoUnit.DAYS)
-        );
+        rt.setExpiresAt(Instant.now().plus(props.getRefreshTokenDays(), ChronoUnit.DAYS));
 
         refreshTokenRepository.save(rt);
 

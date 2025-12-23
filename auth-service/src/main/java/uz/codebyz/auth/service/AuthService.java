@@ -111,105 +111,6 @@ public class AuthService {
         return ResponseDto.ok("Kod emailga yuborildi, kod amal qilish muddati %d daqiqa".formatted(verificationProps.getSignInCodeMinutes()));
     }
 
-    @Transactional
-    public ResponseDto<AuthTokensResponse> signUpVerify1(
-            VerifyCodeRequest req,
-            HttpServletRequest request
-    ) {
-
-        // ================= HTTP CONTEXT =================
-        String deviceId = resolveDeviceId(request);
-        String ip = clientIp(request);
-        String userAgent = request.getHeader("User-Agent");
-
-        if (deviceId == null || deviceId.isBlank()) {
-            return ResponseDto.fail(
-                    400,
-                    ErrorCode.DEVICE_ID_REQUIRED,
-                    "Device aniqlanmadi"
-            );
-        }
-
-        // ================= IDENTIFIER =================
-        String identifier = req.getIdentifier().trim().toLowerCase();
-
-        // ================= PENDING REG =================
-        PendingRegistration pr =
-                pendingRepo.findByEmailIgnoreCase(identifier)
-                        .or(() -> pendingRepo.findByUsernameIgnoreCase(identifier))
-                        .orElse(null);
-
-        if (pr == null) {
-            return ResponseDto.fail(
-                    404,
-                    ErrorCode.USER_NOT_FOUND,
-                    "Pending user topilmadi"
-            );
-        }
-
-        if (pr.getExpiresAt() != null &&
-                pr.getExpiresAt().isBefore(Instant.now())) {
-            return ResponseDto.fail(
-                    410,
-                    ErrorCode.VERIFICATION_EXPIRED,
-                    "Registratsiya muddati tugagan, qayta sign-up qiling"
-            );
-        }
-
-        // ================= VERIFY CODE =================
-        VerifyResult vr = verify(
-                identifier,
-                VerificationPurpose.SIGN_UP,
-                req.getCode()
-        );
-
-        if (!vr.ok) {
-            return ResponseDto.fail(
-                    vr.httpCode,
-                    vr.errorCode,
-                    vr.message
-            );
-        }
-
-        // ================= CREATE USER =================
-        User u = new User();
-        u.setFirstname(pr.getFirstname());
-        u.setLastname(pr.getLastname());
-        u.setUsername(pr.getUsername());
-        u.setEmail(pr.getEmail());
-        u.setPasswordHash(pr.getPasswordHash());
-        u.setRole(UserRole.STUDENT);
-        u.setEmailVerified(true);
-        u.setActive(true);
-
-        u = userRepo.save(u);
-        pendingRepo.delete(pr);
-
-        // ================= DEVICE LIMIT =================
-        ResponseDto<Void> devRes =
-                ensureDeviceAllowed(u.getId(), deviceId, ip, userAgent);
-
-        if (!devRes.isSuccess()) {
-            return ResponseDto.fail(
-                    devRes.getCode(),
-                    devRes.getErrorCode(),
-                    devRes.getMessage()
-            );
-        }
-
-        // ================= TOKENS =================
-        String jti = UUID.randomUUID().toString();
-
-        String access = jwtTokenService.createAccessToken(u, jti);
-        String refresh = jwtTokenService.createRefreshToken(u, jti);
-
-        saveRefreshToken(u.getId(), deviceId, jti);
-
-        return ResponseDto.ok(
-                "Registration completed successfully",
-                new AuthTokensResponse(access, refresh)
-        );
-    }
 
     @Transactional
     public ResponseDto<AuthTokensResponse> signUpVerify(VerifyCodeRequest req, String deviceId, String ip, String userAgent) {
@@ -251,7 +152,7 @@ public class AuthService {
         if (!devRes.isSuccess()) return ResponseDto.fail(devRes.getCode(), devRes.getErrorCode(), devRes.getMessage());
 
         String jti = UUID.randomUUID().toString();
-        String access = jwtTokenService.createAccessToken(u, jti);
+        String access = jwtTokenService.createAccessToken(u, deviceId, jti);
         String refresh = jwtTokenService.createRefreshToken(u, jti);
         saveRefreshToken(u.getId(), deviceId, jti);
         return ResponseDto.ok("OK", new AuthTokensResponse(access, refresh));
@@ -429,7 +330,7 @@ public class AuthService {
         // ================= TOKENS =================
         String jti = UUID.randomUUID().toString();
 
-        String access = jwtTokenService.createAccessToken(u, jti);
+        String access = jwtTokenService.createAccessToken(u, deviceId, jti);
         String refresh = jwtTokenService.createRefreshToken(u, jti);
 
         saveRefreshToken(u.getId(), deviceId, jti);
@@ -463,7 +364,7 @@ public class AuthService {
         if (!devRes.isSuccess()) return ResponseDto.fail(devRes.getCode(), devRes.getErrorCode(), devRes.getMessage());
 
         String jti = UUID.randomUUID().toString();
-        String access = jwtTokenService.createAccessToken(u, jti);
+        String access = jwtTokenService.createAccessToken(u, deviceId, jti);
         String refresh = jwtTokenService.createRefreshToken(u, jti);
         saveRefreshToken(u.getId(), deviceId, jti);
         return ResponseDto.ok("OK", new AuthTokensResponse(access, refresh));
@@ -710,7 +611,7 @@ public class AuthService {
 
         // 5️⃣ YANGI ACCESS TOKEN YARATAMIZ (YANGI JTI BILAN)
         String newJti = UUID.randomUUID().toString();
-        String newAccessToken = jwtTokenService.createAccessToken(user, newJti);
+        String newAccessToken = jwtTokenService.createAccessToken(user, deviceId, newJti);
 
         // 6️⃣ REFRESH TOKEN ROTATION (TAVSIYA ETILADI)
         rt.setRevoked(true);

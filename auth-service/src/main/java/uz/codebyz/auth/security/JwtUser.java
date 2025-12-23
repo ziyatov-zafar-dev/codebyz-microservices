@@ -15,12 +15,18 @@ public class JwtUser implements UserDetails {
     private final String username;
     private final UserRole role;
     private Integer tokenVersion;
+    private final String deviceId;
 
-    public JwtUser(UUID userId, String username, UserRole role,Integer tokenVersion) {
+    public JwtUser(UUID userId, String username, UserRole role, Integer tokenVersion, String deviceId) {
         this.userId = userId;
         this.username = username;
         this.role = role;
         this.tokenVersion = tokenVersion;
+        this.deviceId = deviceId;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
     }
 
     public Integer getTokenVersion() {

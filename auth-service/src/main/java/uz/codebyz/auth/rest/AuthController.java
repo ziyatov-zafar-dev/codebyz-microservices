@@ -31,6 +31,11 @@ public class AuthController {
         return authService.signUp(req);
     }
 
+    @GetMapping("/test")
+    public ResponseDto<?> test() {
+        return authService.signIn(new SignInRequest("testuser", "123456"));
+    }
+
     @PostMapping("/sign-up/verify")
     public ResponseDto<AuthTokensResponse> signUpVerify(
             @Valid @RequestBody VerifyCodeRequest req,

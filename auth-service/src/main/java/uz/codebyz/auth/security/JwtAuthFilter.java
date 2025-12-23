@@ -1,15 +1,17 @@
 package uz.codebyz.auth.security;
+
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.http.HttpHeaders;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import uz.codebyz.auth.device.UserDeviceRepository;
-import uz.codebyz.auth.security.JwtTokenService;
+import uz.codebyz.auth.session.RevokedAccessTokenRepository;
 import uz.codebyz.auth.user.UserRepository;
 
 import java.io.IOException;
@@ -19,16 +21,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenService tokenService;
     private final UserRepository userRepo;
-    private final UserDeviceRepository userDeviceRepo;
+    private final UserDeviceRepository userDeviceRepository;
 
-    public JwtAuthFilter(
-            JwtTokenService tokenService,
-            UserRepository userRepo,
-            UserDeviceRepository userDeviceRepo
-    ) {
+    public JwtAuthFilter(JwtTokenService tokenService,
+                         RevokedAccessTokenRepository revokedAccessTokenRepository, UserRepository userRepo, UserDeviceRepository userDeviceRepository) {
         this.tokenService = tokenService;
         this.userRepo = userRepo;
-        this.userDeviceRepo = userDeviceRepo;
+        this.userDeviceRepository = userDeviceRepository;
     }
 
     @Override
@@ -48,43 +47,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = header.substring(7);
 
         try {
-            JwtUser jwtUser = tokenService.parseAccessToken(token);
+            JwtUser jwtUser;
+            try {
+                jwtUser = tokenService.parseAccessToken(token);
+            } catch (Exception e) {
+                System.err.println("error parsing token: " + e.getMessage());
+                return;
+            }
 
-            // ===============================
-            // 1️⃣ TOKEN VERSION CHECK
-            // ===============================
+            // 🔥 TOKEN VERSION TEKSHIRUV
             int tokenVersionFromJwt = jwtUser.getTokenVersion();
-            int currentTokenVersion =
-                    userRepo.findTokenVersionById(jwtUser.getUserId());
+            int currentTokenVersion = userRepo.findTokenVersionById(jwtUser.getUserId());
+
             if (tokenVersionFromJwt != currentTokenVersion) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
 
-            // ===============================
-            // 2️⃣ DEVICE ACTIVE CHECK 🔥
-            // ===============================
-            String deviceId = request.getHeader("X-Device-Id");
-
+            String deviceId = jwtUser.getDeviceId();
             if (deviceId == null || deviceId.isBlank()) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
-
             boolean deviceActive =
-                    userDeviceRepo.existsByUserIdAndDeviceIdAndActiveTrue(
+                    userDeviceRepository.existsByUserIdAndDeviceIdAndActiveTrue(
                             jwtUser.getUserId(),
                             deviceId
                     );
-
             if (!deviceActive) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
-
-            // ===============================
-            // 3️⃣ AUTH CONTEXT SET
-            // ===============================
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
                             jwtUser,
@@ -95,6 +88,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
 
         } catch (Exception e) {
+            System.err.println(e.getMessage());
             SecurityContextHolder.clearContext();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
@@ -102,4 +96,5 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 }
