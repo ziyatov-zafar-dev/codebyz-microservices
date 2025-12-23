@@ -1,0 +1,72 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/codebyzdb
+    username: postgres
+    password: 122333
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+        jdbc:
+          time_zone: UTC
+
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - email
+              - profile
+
+jwt:
+  secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+  access-token-minutes: 60
+  refresh-token-days: 30
+
+sendgrid:
+  enabled: true
+  api-key: ${SEND_GRID:}
+  from-email: codebyzplatform@gmail.com
+  from-name: CodeByZ
+
+verification:
+  sign-up-code-minutes: 2
+  sign-in-code-minutes: 2
+  password:
+    forgot-password-code-minutes: 2
+    change-password-code-minutes: 2
+
+
+
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+  api-docs:
+    path: /v3/api-docs
+
+storage:
+  uploads-dir: uploads
+  profile:
+    dir: profile
+    public-url: http://localhost:${server.port}/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
+app:
+  timezone: Europe/Istanbul

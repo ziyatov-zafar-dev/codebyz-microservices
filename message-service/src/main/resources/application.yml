@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/codebyz_message
+    username: postgres
+    password: 122333
+  jpa:
+    hibernate:
+      ddl-auto: update
+  data:
+    mongodb:
+      uri: mongodb+srv://ziyatovzafar98_db_user:KwCTDphxwMkXB8QX@cluster0.exxw2t9.mongodb.net/codebyz_message?retryWrites=true&w=majority/codebyz_message
+server:
+  port: 8083
+
+storage:
+  uploads-dir: uploads
+  profile:
+    dir: message
+    public-url: http://localhost:${server.port}/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
+app:
+  timezone: Europe/Istanbul
+
+jwt:
+  secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+  access-token-minutes: 60
+  refresh-token-days: 30
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+  api-docs:
+    path: /v3/api-docs

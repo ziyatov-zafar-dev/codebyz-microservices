@@ -1,0 +1,57 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+
+        # AUTH API
+        - id: auth-api
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**,/api/users/**
+
+        # AUTH SWAGGER (AS-IS)
+        - id: auth-swagger
+          uri: http://localhost:8081
+          predicates:
+            - Path=/swagger-ui/**,/v3/api-docs/**
+
+        # USER API
+        - id: user-api
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/users-test/**
+        # CHATS API
+        - id: chat-api
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/chats/**
+        # CHATS API
+        - id: message-api
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/messages/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    urls:
+      - name: Auth Service (8081)
+        url: http://localhost:8081/v3/api-docs
+      - name: User Service (8082)
+        url: http://localhost:8082/v3/api-docs
+      - name: Message and Chat Service (8083)
+        url: http://localhost:8083/v3/api-docs
+app:
+  timezone: Europe/Istanbul
