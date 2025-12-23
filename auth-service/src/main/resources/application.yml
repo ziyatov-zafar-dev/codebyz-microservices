@@ -6,14 +6,13 @@ spring:
     name: auth-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/codebyzplatform
-#    url: jdbc:postgresql://localhost:5432/codebyzdb
+    url: jdbc:postgresql://localhost:5432/codebyzdb
     username: postgres
     password: 122333
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     properties:
       hibernate:
         format_sql: true
@@ -68,6 +67,6 @@ storage:
   uploads-dir: uploads
   profile:
     dir: profile
-    public-url: https://codebyz.online/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
+    public-url: http://localhost:${server.port}/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
 app:
   timezone: Europe/Istanbul
