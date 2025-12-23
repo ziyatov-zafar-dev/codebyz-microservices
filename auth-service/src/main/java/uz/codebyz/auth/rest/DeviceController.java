@@ -1,5 +1,6 @@
 package uz.codebyz.auth.rest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import uz.codebyz.auth.common.ResponseDto;
@@ -28,9 +29,12 @@ public class DeviceController {
 
     @PostMapping("/logout/{deviceId}")
     public ResponseDto<Void> logoutDevice(@AuthenticationPrincipal JwtUser user,
-                                          @PathVariable("deviceId") String deviceId) {
-        return service.logoutDevice(user.getUserId(), deviceId);
+                                          @PathVariable("deviceId") String deviceId,
+                                          HttpServletRequest req) {
+        String jti = (String) req.getAttribute("jti");
+        return service.logoutDevice(user.getUserId(), deviceId, jti);
     }
+
     @PostMapping("/logout-all")
     public ResponseDto<Void> logoutAll(@AuthenticationPrincipal JwtUser user, @RequestHeader("X-Device-Id") String deviceId
     ) {

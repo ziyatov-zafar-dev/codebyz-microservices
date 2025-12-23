@@ -1,6 +1,7 @@
 package uz.codebyz.auth.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -8,6 +9,10 @@ import uz.codebyz.auth.common.ErrorCode;
 import uz.codebyz.auth.common.ResponseDto;
 import uz.codebyz.auth.device.UserDeviceRepository;
 import uz.codebyz.auth.dto.*;
+import uz.codebyz.auth.guard.LoginGuardService;
+import uz.codebyz.auth.security.JwtTokenService;
+import uz.codebyz.auth.session.RefreshTokenRepository;
+import uz.codebyz.auth.session.RevokedAccessTokenRepository;
 import uz.codebyz.auth.storage.FileStorageService;
 import uz.codebyz.auth.user.User;
 import uz.codebyz.auth.user.UserRepository;
@@ -18,6 +23,12 @@ import java.util.UUID;
 
 @Service
 public class UserService {
+    private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final RevokedAccessTokenRepository revokedAccessTokenRepository;
+    private final LoginGuardService loginGuardService;
+    private final DeviceService deviceService;
+    private final JwtTokenService jwtTokenService;
     @Value("${app.timezone}")
     private String timezone;
     private final UserRepository userRepository;
@@ -27,11 +38,17 @@ public class UserService {
     private final UserRepository repo;
     private final FileStorageService storageService;
 
-    public UserService(UserRepository repo, FileStorageService storageService, UserRepository userRepository, UserDeviceRepository userDeviceRepository) {
+    public UserService(UserRepository repo, FileStorageService storageService, UserRepository userRepository, UserDeviceRepository userDeviceRepository, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository, RevokedAccessTokenRepository revokedAccessTokenRepository, LoginGuardService loginGuardService, DeviceService deviceService, JwtTokenService jwtTokenService) {
         this.repo = repo;
         this.storageService = storageService;
         this.userRepository = userRepository;
         this.userDeviceRepository = userDeviceRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.revokedAccessTokenRepository = revokedAccessTokenRepository;
+        this.loginGuardService = loginGuardService;
+        this.deviceService = deviceService;
+        this.jwtTokenService = jwtTokenService;
     }
 
     @Transactional(readOnly = true)
@@ -147,4 +164,88 @@ public class UserService {
     public boolean existsById(UUID userid) {
         return userRepository.existsById(userid);
     }
+
+    @Transactional
+    public ResponseDto<AuthTokensResponse> changePassword(
+            UUID userId,
+            String currentDeviceId,
+            ChangePasswordRequest request
+    ) {
+
+        // 1️⃣ USERNI TOPAMIZ
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 2️⃣ ESKI PAROLNI TEKSHIRAMIZ
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            return ResponseDto.fail(
+                    400,
+                    ErrorCode.INVALID_PASSWORD,
+                    "Old password incorrect"
+            );
+        }
+
+        // 3️⃣ YANGI PAROL VALIDATSIYASI
+        String newPassword = request.getNewPassword();
+
+        if (newPassword == null || newPassword.isBlank()) {
+            return ResponseDto.fail(
+                    400,
+                    ErrorCode.NEW_PASSWORD_REQUIRED,
+                    "New password required"
+            );
+        }
+
+        if (newPassword.length() < 8) {
+            return ResponseDto.fail(
+                    400,
+                    ErrorCode.PASSWORD_WEAK,
+                    "Password must be at least 8 characters"
+            );
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            return ResponseDto.fail(
+                    400,
+                    ErrorCode.SAME_PASSWORD,
+                    "New password must be different"
+            );
+        }
+
+        // 4️⃣ PASSWORDNI YANGILAYMIZ
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+
+        // 🔐 TOKEN VERSION OSHIRAMIZ (ESKI TOKENLAR O‘LADI)
+        user.setTokenVersion(user.getTokenVersion() + 1);
+
+        userRepository.save(user);
+
+        UUID uid = user.getId();
+
+        // ============================
+        // 🔥 SECURITY CLEANUP
+        // ============================
+
+        // 5️⃣ BOSHQA DEVICE’LARNING TOKENLARINI O‘CHIRAMIZ
+        refreshTokenRepository.revokeAllExceptDevice(uid, currentDeviceId);
+        revokedAccessTokenRepository.revokeAllExceptDevice(uid, currentDeviceId);
+
+        // 6️⃣ BOSHQA DEVICE’LARNI LOGOUT QILAMIZ
+        deviceService.logoutAll(uid, currentDeviceId);
+
+        // 7️⃣ LOGIN GUARD RESET
+        loginGuardService.onSuccess(uid);
+        AuthTokensResponse tokens = jwtTokenService.generateTokens(
+                user,
+                currentDeviceId
+        );
+        return ResponseDto.ok(
+                "Password changed. Other sessions logged out.",
+                tokens
+        );
+
+    }
+
+
+
 }

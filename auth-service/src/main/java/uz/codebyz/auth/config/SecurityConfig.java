@@ -35,17 +35,11 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
-                        "/api/auth/sign-in",
-                        "/api/auth/sign-in/verify",
-                        "/api/auth/sign-up",
+                        "/api/auth/**",
                         "/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles/**", "/uploads/**",
-                        "/api/auth/sign-up/verify",
-                        "/api/auth/reset-password",
-                        "/api/auth/forgot-password",
-                        "/api/auth/logout",
-                        "/api/users/exists/**"
+                       "/api/users/exists/**"
                 ).permitAll()
-                .requestMatchers("/api/users/**").hasAnyRole("TEACHER", "ADMIN", "STUDENT")
+                .requestMatchers("/api/users/**","/api/auth/devices/**").hasAnyRole("TEACHER", "ADMIN", "STUDENT")
                 .anyRequest().authenticated()
         );
 

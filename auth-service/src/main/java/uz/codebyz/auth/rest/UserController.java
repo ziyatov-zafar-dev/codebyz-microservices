@@ -3,6 +3,8 @@ package uz.codebyz.auth.rest;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -70,4 +72,22 @@ public class UserController {
     public MeResponse findByUserId(@PathVariable("userid") UUID userid) {
         return service.me(userid).getData();
     }
+
+    @PostMapping("change-password")
+    public ResponseDto<AuthTokensResponse> changePassword(
+            @AuthenticationPrincipal JwtUser user,
+            @RequestHeader("X-Device-Id") String currentDeviceId,
+            @Valid @RequestBody ChangePasswordRequest req
+    ) {
+        return service.changePassword(user.getUserId(), currentDeviceId, req);
+    }
+
+    @PostMapping("has-profile-image")
+    public ResponseEntity<Boolean> hasProfileImage(
+            @AuthenticationPrincipal JwtUser user
+    ) {
+        return ResponseEntity.ok(service.me(user.getUserId()).getData().getAvatarUrl() != null);
+    }
 }
+
+

@@ -10,6 +10,10 @@ import uz.codebyz.auth.security.JwtUser;
 import uz.codebyz.auth.service.AuthService;
 import uz.codebyz.auth.service.DeviceService;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -52,10 +56,15 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseDto<Void> logout(@AuthenticationPrincipal JwtUser user,
-                                    @RequestHeader(value = "X-Device-Id", required = false) String deviceId) {
-        return deviceService.logoutDevice(user.getUserId(), deviceId);
+    public ResponseDto<Void> logout(
+            @AuthenticationPrincipal JwtUser user,
+            @RequestHeader("X-Device-Id") String deviceId,
+            HttpServletRequest req
+    ) {
+        String jti = (String) req.getAttribute("jti");
+        return deviceService.logoutDevice(user.getUserId(), deviceId, jti);
     }
+
 
     private String clientIp(HttpServletRequest req) {
         String xff = req.getHeader("X-Forwarded-For");
@@ -76,4 +85,24 @@ public class AuthController {
     ) {
         return authService.resetPassword(request);
     }
+
+    @PostMapping("/refresh")
+    public ResponseDto<AuthTokensResponse> refresh(
+            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader("Authorization") String refreshToken
+    ) {
+        return authService.refreshToken(refreshToken, deviceId);
+    }
+
+    @PostMapping("/to-date-region-time")
+    public LocalDateTime toCurrentDate(
+            @RequestParam("now") Instant now,
+            @RequestParam("timezone") String timezone
+    ) {
+        return LocalDateTime.ofInstant(
+                now,
+                ZoneId.of(timezone)
+        );
+    }
+
 }

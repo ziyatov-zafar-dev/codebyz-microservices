@@ -6,6 +6,9 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 import uz.codebyz.auth.config.properties.JwtProperties;
+import uz.codebyz.auth.dto.AuthTokensResponse;
+import uz.codebyz.auth.session.RefreshToken;
+import uz.codebyz.auth.session.RefreshTokenRepository;
 import uz.codebyz.auth.user.User;
 import uz.codebyz.auth.user.UserRole;
 
@@ -21,8 +24,9 @@ public class JwtTokenService {
 
     private final JwtProperties props;
     private final Key key;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    public JwtTokenService(JwtProperties props) {
+    public JwtTokenService(JwtProperties props, RefreshTokenRepository refreshTokenRepository) {
         this.props = props;
 
         byte[] raw = props.getSecret().getBytes(StandardCharsets.UTF_8);
@@ -32,6 +36,7 @@ public class JwtTokenService {
             raw = padded;
         }
         this.key = Keys.hmacShaKeyFor(raw);
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     // =========================
@@ -105,4 +110,30 @@ public class JwtTokenService {
 
         return new JwtUser(userId, username, role, tokenVersion);
     }
+
+    public AuthTokensResponse generateTokens(User user, String deviceId) {
+
+        // 1️⃣ JTI yaratamiz
+        String jti = UUID.randomUUID().toString();
+
+        // 2️⃣ TOKENLARNI YARATAMIZ
+        String accessToken = createAccessToken(user, jti);
+        String refreshToken = createRefreshToken(user, jti);
+
+        // 3️⃣ REFRESH TOKENNI DB’GA SAQLAYMIZ
+        RefreshToken rt = new RefreshToken();
+        rt.setUserId(user.getId());
+        rt.setDeviceId(deviceId);
+        rt.setJti(jti);
+        rt.setRevoked(false);
+        rt.setExpiresAt(
+                Instant.now().plus(props.getRefreshTokenDays(), ChronoUnit.DAYS)
+        );
+
+        refreshTokenRepository.save(rt);
+
+        // 4️⃣ FRONTEND’GA QAYTARAMIZ
+        return new AuthTokensResponse(accessToken, refreshToken);
+    }
+
 }

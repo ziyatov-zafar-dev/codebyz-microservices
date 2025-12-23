@@ -1,5 +1,6 @@
 package uz.codebyz.auth.service;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.codebyz.auth.common.ErrorCode;
 import uz.codebyz.auth.common.ResponseDto;
+import uz.codebyz.auth.config.properties.JwtProperties;
 import uz.codebyz.auth.config.properties.VerificationProperties;
 import uz.codebyz.auth.device.DeviceNameUtil;
 import uz.codebyz.auth.device.UserDevice;
@@ -52,6 +54,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final DeviceService deviceService;
     private final RevokedAccessTokenRepository revokedAccessTokenRepository;
+    private final JwtProperties jwtProperties;
 
     public AuthService(UserRepository userRepo,
                        PendingRegistrationRepository pendingRepo,
@@ -62,7 +65,7 @@ public class AuthService {
                        JwtTokenService jwtTokenService,
                        LoginGuardService loginGuardService,
                        UserDeviceRepository deviceRepo,
-                       IpWhoIsClient ipWhoIsClient, RefreshTokenRepository refreshRepo, RefreshTokenRepository refreshTokenRepository, DeviceService deviceService, RevokedAccessTokenRepository revokedAccessTokenRepository) {
+                       IpWhoIsClient ipWhoIsClient, RefreshTokenRepository refreshRepo, RefreshTokenRepository refreshTokenRepository, DeviceService deviceService, RevokedAccessTokenRepository revokedAccessTokenRepository, JwtProperties jwtProperties) {
         this.userRepo = userRepo;
         this.pendingRepo = pendingRepo;
         this.verificationRepo = verificationRepo;
@@ -77,6 +80,7 @@ public class AuthService {
         this.refreshTokenRepository = refreshTokenRepository;
         this.deviceService = deviceService;
         this.revokedAccessTokenRepository = revokedAccessTokenRepository;
+        this.jwtProperties = jwtProperties;
     }
 
     @Transactional
@@ -196,7 +200,7 @@ public class AuthService {
         // ================= TOKENS =================
         String jti = UUID.randomUUID().toString();
 
-        String access = jwtTokenService.createAccessToken(u,jti);
+        String access = jwtTokenService.createAccessToken(u, jti);
         String refresh = jwtTokenService.createRefreshToken(u, jti);
 
         saveRefreshToken(u.getId(), deviceId, jti);
@@ -247,7 +251,7 @@ public class AuthService {
         if (!devRes.isSuccess()) return ResponseDto.fail(devRes.getCode(), devRes.getErrorCode(), devRes.getMessage());
 
         String jti = UUID.randomUUID().toString();
-        String access = jwtTokenService.createAccessToken(u,jti);
+        String access = jwtTokenService.createAccessToken(u, jti);
         String refresh = jwtTokenService.createRefreshToken(u, jti);
         saveRefreshToken(u.getId(), deviceId, jti);
         return ResponseDto.ok("OK", new AuthTokensResponse(access, refresh));
@@ -425,7 +429,7 @@ public class AuthService {
         // ================= TOKENS =================
         String jti = UUID.randomUUID().toString();
 
-        String access = jwtTokenService.createAccessToken(u,jti);
+        String access = jwtTokenService.createAccessToken(u, jti);
         String refresh = jwtTokenService.createRefreshToken(u, jti);
 
         saveRefreshToken(u.getId(), deviceId, jti);
@@ -657,6 +661,78 @@ public class AuthService {
         );
 
         return ResponseDto.ok("Password reset code sent to email");
+    }
+
+    @Transactional
+    public ResponseDto<AuthTokensResponse> refreshToken(
+            String authHeader,
+            String deviceId
+    ) {
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseDto.fail(401, ErrorCode.INVALID_TOKEN, "Refresh token missing");
+        }
+
+        String refreshToken = authHeader.substring(7);
+
+        // 1️⃣ REFRESH TOKENNI PARSE QILAMIZ
+        Claims claims;
+        try {
+            claims = jwtTokenService.parseClaims(refreshToken);
+        } catch (Exception e) {
+            return ResponseDto.fail(401, ErrorCode.INVALID_TOKEN, "Invalid refresh token");
+        }
+
+        // 2️⃣ TYPE TEKSHIRAMIZ
+        if (!"refresh".equals(claims.get("type", String.class))) {
+            return ResponseDto.fail(401, ErrorCode.INVALID_TOKEN, "Not a refresh token");
+        }
+
+        UUID userId = UUID.fromString(claims.getSubject());
+        String jti = claims.getId();
+
+        // 3️⃣ DB'DAN REFRESH TOKENNI TOPAMIZ
+        RefreshToken rt = refreshTokenRepository
+                .findByJtiAndDeviceIdAndRevokedFalse(jti, deviceId)
+                .orElse(null);
+
+        if (rt == null) {
+            return ResponseDto.fail(401, ErrorCode.INVALID_TOKEN, "Refresh token revoked");
+        }
+
+        if (rt.getExpiresAt().isBefore(Instant.now())) {
+            return ResponseDto.fail(401, ErrorCode.TOKEN_EXPIRED, "Refresh token expired");
+        }
+
+        // 4️⃣ USERNI TOPAMIZ
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 5️⃣ YANGI ACCESS TOKEN YARATAMIZ (YANGI JTI BILAN)
+        String newJti = UUID.randomUUID().toString();
+        String newAccessToken = jwtTokenService.createAccessToken(user, newJti);
+
+        // 6️⃣ REFRESH TOKEN ROTATION (TAVSIYA ETILADI)
+        rt.setRevoked(true);
+        refreshTokenRepository.save(rt);
+
+        String newRefreshToken = jwtTokenService.createRefreshToken(user, newJti);
+
+        RefreshToken newRt = new RefreshToken();
+        newRt.setUserId(user.getId());
+        newRt.setDeviceId(deviceId);
+        newRt.setJti(newJti);
+        newRt.setRevoked(false);
+        newRt.setExpiresAt(
+                Instant.now().plus(jwtProperties.getRefreshTokenDays(), ChronoUnit.DAYS)
+        );
+        refreshTokenRepository.save(newRt);
+
+        // 7️⃣ RESPONSE
+        return ResponseDto.ok(
+                "Token refreshed",
+                new AuthTokensResponse(newAccessToken, newRefreshToken)
+        );
     }
 
 

@@ -24,9 +24,15 @@ public interface UserDeviceRepository extends JpaRepository<UserDevice, UUID> {
     List<UserDevice> findByUserId(@Param("uid") UUID userId);
 
     boolean existsByUserIdAndDeviceId(UUID userId, String deviceId);
+    boolean existsByUserIdAndDeviceIdAndActiveTrue(UUID userId, String deviceId);
+
     @Modifying
     @Query("update UserDevice d set d.active=false where d.userId=?1")
     void deactivateAllByUser(UUID userId);
 
+
+    @Modifying
+    @Query("update UserDevice d set d.active=false where d.userId=?1 and d.deviceId<>?2")
+    void deactivateAllExcept(UUID uid, String currentDeviceId);
 
 }
