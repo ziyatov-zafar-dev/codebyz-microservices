@@ -1,6 +1,7 @@
 package uz.codebyz.auth.rest;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -56,9 +57,10 @@ public class UserController {
     @PostMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseDto<Void> uploadProfileImage(
             @AuthenticationPrincipal JwtUser jwtUser,
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest req
     ) {
-        return service.uploadProfileImage(jwtUser.getUserId(), file);
+        return service.uploadProfileImage(jwtUser.getUserId(), file,req);
     }
 
     @Hidden

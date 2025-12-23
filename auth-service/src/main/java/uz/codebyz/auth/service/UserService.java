@@ -1,5 +1,6 @@
 package uz.codebyz.auth.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -119,7 +120,7 @@ public class UserService {
 
 
     @Transactional
-    public ResponseDto<Void> uploadProfileImage(UUID userId, MultipartFile file) {
+    public ResponseDto<Void> uploadProfileImage(UUID userId, MultipartFile file, HttpServletRequest req) {
 
         if (file == null || file.isEmpty()) {
             return ResponseDto.fail(400, ErrorCode.FILE_REQUIRED, "File required");
@@ -140,7 +141,7 @@ public class UserService {
             user.setAvatarName(file.getOriginalFilename()); // 🔥 MUHIM
             user.setAvatarSize(file.getSize());
             user.setAvatarSizeMB(FileUtil.toMB(file.getSize()));
-            user.setAvatarUrl(publicUrl + "/" + stored.relativePath());
+            user.setAvatarUrl(getHttpUrl(req) + publicUrl + "/" + stored.relativePath());
             user.setUploadedImageTime(Instant.now());
             userRepository.save(user);
             return ResponseDto.ok("Profile image uploaded");
@@ -149,6 +150,23 @@ public class UserService {
             return ResponseDto.fail(500, ErrorCode.FILE_SAVE_ERROR, "Upload failed");
         }
     }
+
+    private String getHttpUrl(HttpServletRequest req) {
+        String scheme = req.getScheme();      // http or https
+        String serverName = req.getServerName(); // domain yoki localhost
+        int serverPort = req.getServerPort();
+
+        boolean isDefaultPort =
+                (scheme.equals("http") && serverPort == 80) ||
+                        (scheme.equals("https") && serverPort == 443);
+
+        if (isDefaultPort) {
+            return scheme + "://" + serverName;
+        }
+
+        return scheme + "://" + serverName + ":" + serverPort;
+    }
+
 
     @Transactional
     public void heartbeat(UUID userId) {
@@ -245,7 +263,6 @@ public class UserService {
         );
 
     }
-
 
 
 }
