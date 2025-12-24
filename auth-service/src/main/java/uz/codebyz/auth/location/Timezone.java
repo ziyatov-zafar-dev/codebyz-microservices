@@ -5,7 +5,7 @@ import com.nimbusds.jose.shaded.gson.annotations.SerializedName;
 public class Timezone {
     private String id;
     @SerializedName("current_time")
-    private String currentTime;
+    private String current_time;
     private String utc;
 
     public String getId() {
@@ -17,11 +17,11 @@ public class Timezone {
     }
 
     public String getCurrentTime() {
-        return currentTime;
+        return current_time;
     }
 
     public void setCurrentTime(String currentTime) {
-        this.currentTime = currentTime;
+        this.current_time = currentTime;
     }
 
     public String getUtc() {
