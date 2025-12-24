@@ -8,6 +8,7 @@ import uz.codebyz.auth.device.UserDevice;
 import uz.codebyz.auth.device.UserDeviceRepository;
 import uz.codebyz.auth.dto.DeviceResponse;
 import uz.codebyz.auth.location.IpWhoIsClient;
+import uz.codebyz.auth.location.IpWhoIsResponse;
 import uz.codebyz.auth.session.RefreshTokenRepository;
 import uz.codebyz.auth.session.RevokedAccessToken;
 import uz.codebyz.auth.session.RevokedAccessTokenRepository;
@@ -36,18 +37,20 @@ public class DeviceService {
         List<UserDevice> devices = deviceRepo.findActiveByUserId(userId);
         List<DeviceResponse> out = new ArrayList<>();
         for (UserDevice d : devices) {
+            IpWhoIsResponse lookup = ipWhoIsClient.lookup(d.getIp());
             DeviceResponse r = new DeviceResponse(
                     d.getDeviceId(),
                     d.isActive(),
                     d.getIp(),
-                    ipWhoIsClient.lookup(d.getIp()),
+                    lookup,
                     d.getLastLoginAt(),
                     d.getDeviceName(),
                     deviceId.equals(d.getDeviceId()),
                     d.getBrowserName(),
                     d.getUserAgent(),
                     d.getDeviceType(),
-                    d.getBrowserVersion()
+                    d.getBrowserVersion(),
+                    ipWhoIsClient.getAddress(lookup.getLatitude(), lookup.getLongitude(),lookup.getCountry_code())
             );
             out.add(r);
         }

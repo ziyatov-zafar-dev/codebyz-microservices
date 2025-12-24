@@ -1,6 +1,7 @@
 package uz.codebyz.auth.dto;
 
 import uz.codebyz.auth.device.enums.DeviceType;
+import uz.codebyz.auth.location.AddressResponse;
 import uz.codebyz.auth.location.IpWhoIsResponse;
 import uz.codebyz.auth.location.Timezone;
 
@@ -18,6 +19,15 @@ public class DeviceResponse {
     private String userAgent;
     private DeviceType deviceType;
     private String browserVersion; // 120.0.6099.71
+    private AddressResponse deviceAddress;
+
+    public AddressResponse getDeviceAddress() {
+        return deviceAddress;
+    }
+
+    public void setDeviceAddress(AddressResponse deviceAddress) {
+        this.deviceAddress = deviceAddress;
+    }
 
     public String getBrowserName() {
         return browserName;
@@ -111,7 +121,7 @@ public class DeviceResponse {
     public DeviceResponse(String deviceId, boolean active, String ip, IpWhoIsResponse location,
                           Instant lastLoginAt, String deviceName, Boolean me,
                           String browserName, String userAgent, DeviceType deviceType,
-                          String browserVersion) {
+                          String browserVersion, AddressResponse deviceAddress) {
         this.deviceId = deviceId;
         this.active = active;
         this.ip = ip;
@@ -123,5 +133,6 @@ public class DeviceResponse {
         this.userAgent = userAgent;
         this.deviceType = deviceType;
         this.browserVersion = browserVersion;
+        this.deviceAddress = deviceAddress;
     }
 }
