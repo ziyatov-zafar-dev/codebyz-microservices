@@ -55,7 +55,6 @@ public class User {
     private boolean emailVerified;
     @Column(nullable = false)
     private boolean active;
-
     @Column(nullable = false)
     private Instant createdAt;
     @Column(nullable = false)

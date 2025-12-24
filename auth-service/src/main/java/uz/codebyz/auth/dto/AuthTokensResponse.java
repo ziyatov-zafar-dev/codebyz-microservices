@@ -11,6 +11,7 @@ public class AuthTokensResponse {
     }
 
     public AuthTokensResponse() {
+
     }
 
     public AuthTokensResponse(String accessToken, String refreshToken) {

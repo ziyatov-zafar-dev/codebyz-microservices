@@ -51,8 +51,6 @@ public class AuthService {
     private final JwtTokenService jwtTokenService;
     private final LoginGuardService loginGuardService;
     private final UserDeviceRepository deviceRepo;
-    private final IpWhoIsClient ipWhoIsClient;
-    private final RefreshTokenRepository refreshRepo;
     private final RefreshTokenRepository refreshTokenRepository;
     private final DeviceService deviceService;
     private final RevokedAccessTokenRepository revokedAccessTokenRepository;
@@ -77,8 +75,6 @@ public class AuthService {
         this.jwtTokenService = jwtTokenService;
         this.loginGuardService = loginGuardService;
         this.deviceRepo = deviceRepo;
-        this.ipWhoIsClient = ipWhoIsClient;
-        this.refreshRepo = refreshRepo;
         this.refreshTokenRepository = refreshTokenRepository;
         this.deviceService = deviceService;
         this.revokedAccessTokenRepository = revokedAccessTokenRepository;

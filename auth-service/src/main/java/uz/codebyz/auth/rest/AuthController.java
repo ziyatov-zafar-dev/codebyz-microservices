@@ -42,7 +42,6 @@ public class AuthController {
             @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             HttpServletRequest http
     ) {
-//        return authService.signUpVerify1(req, http);
         return authService.signUpVerify(req, deviceId, clientIp(http), http.getHeader("User-Agent"));
     }
 

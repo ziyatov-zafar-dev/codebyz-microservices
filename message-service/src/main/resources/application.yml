@@ -1,4 +1,13 @@
+server:
+  port: 8083
+
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
   datasource:
     url: jdbc:postgresql://localhost:5432/codebyz_message
     username: postgres
@@ -9,14 +18,13 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://ziyatovzafar98_db_user:KwCTDphxwMkXB8QX@cluster0.exxw2t9.mongodb.net/codebyz_message?retryWrites=true&w=majority/codebyz_message
-server:
-  port: 8083
 
 storage:
   uploads-dir: uploads
   profile:
     dir: message
     public-url: http://localhost:${server.port}/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
+
 app:
   timezone: Europe/Istanbul
 

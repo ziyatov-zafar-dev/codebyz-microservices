@@ -17,8 +17,10 @@ public class JwtTokenService {
     private final Key key;
 
     public JwtTokenService(@Value("${jwt.secret}") String secret) {
-        byte[] raw = secret.getBytes(StandardCharsets.UTF_8);
-        this.key = Keys.hmacShaKeyFor(raw.length >= 32 ? raw : new byte[32]);
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalStateException("jwt.secret must be at least 32 characters");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public JwtUser parse(String token) {
@@ -27,10 +29,14 @@ public class JwtTokenService {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-
         UUID userId = UUID.fromString(claims.getSubject());
-        String role = ((List<?>) claims.get("roles")).get(0).toString();
-
+        Object rolesClaim = claims.get("roles");
+        String role;
+        if (rolesClaim instanceof List<?> list && !list.isEmpty()) {
+            role = list.get(0).toString();
+        } else {
+            role = claims.get("role", String.class);
+        }
         return new JwtUser(userId, role);
     }
 }

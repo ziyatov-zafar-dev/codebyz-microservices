@@ -1,5 +1,6 @@
 package uz.codebyz.auth.service;
 
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.codebyz.auth.common.ErrorCode;
@@ -26,7 +27,10 @@ public class DeviceService {
     private final RevokedAccessTokenRepository revokedAccessTokenRepository;
     private final IpWhoIsClient ipWhoIsClient;
 
-    public DeviceService(UserDeviceRepository deviceRepo, RefreshTokenRepository refreshRepo, RevokedAccessTokenRepository revokedAccessTokenRepository, IpWhoIsClient ipWhoIsClient) {
+    public DeviceService(UserDeviceRepository deviceRepo,
+                         RefreshTokenRepository refreshRepo,
+                         RevokedAccessTokenRepository revokedAccessTokenRepository,
+                         IpWhoIsClient ipWhoIsClient) {
         this.deviceRepo = deviceRepo;
         this.refreshRepo = refreshRepo;
         this.revokedAccessTokenRepository = revokedAccessTokenRepository;
