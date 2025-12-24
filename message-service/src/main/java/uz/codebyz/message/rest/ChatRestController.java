@@ -3,12 +3,12 @@ package uz.codebyz.message.rest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import uz.codebyz.message.security.JwtUser;
 import uz.codebyz.message.service.UserService;
 import uz.codebyz.message.service.impl.UserServiceImpl;
 import uz.codebyz.message.dto.req.chat.CreateChatRequest;
 import uz.codebyz.message.dto.response.chat.ChatResponse;
 import uz.codebyz.message.dto.response.ResponseDto;
-import uz.codebyz.message.security.JwtUser;
 import uz.codebyz.message.service.ChatService;
 
 import java.util.List;
@@ -32,6 +32,7 @@ public class ChatRestController {
     @GetMapping("get-user")
     public ResponseEntity<?> getUser(@AuthenticationPrincipal JwtUser jwtUser) throws Exception {
         return ResponseEntity.ok(userService.getUser(jwtUser.getUserId()));
+//        return ResponseEntity.ok(jwtUser);
     }
 
     @PostMapping("create-chat")

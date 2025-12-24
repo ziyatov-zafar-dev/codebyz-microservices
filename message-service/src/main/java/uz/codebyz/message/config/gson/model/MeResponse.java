@@ -1,7 +1,5 @@
 package uz.codebyz.message.config.gson.model;
 
-import uz.codebyz.auth.user.SocialLinks;
-import uz.codebyz.auth.user.UserRole;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -13,7 +11,7 @@ public class MeResponse {
     private String lastname;
     private String username;
     private String email;
-    private UserRole role;
+    private String role;
     private boolean emailVerified;
     private boolean active;
 
@@ -22,22 +20,11 @@ public class MeResponse {
     private Long avatarSize;
     private String avatarSizeMB;
     private String avatarFilePath;
-
-    private Instant birthDate;
     private SocialLinks socialLinks;
-    private ZonedDateTime lastOnline;
+    private String birthDate;
 
-    public Boolean getOnline() {
-        return online;
-    }
+    private String lastOnline;
 
-    public void setOnline(Boolean online) {
-        this.online = online;
-    }
-
-
-
-    private Boolean online;
     public UUID getId() {
         return id;
     }
@@ -78,11 +65,11 @@ public class MeResponse {
         this.email = email;
     }
 
-    public UserRole getRole() {
+    public String getRole() {
         return role;
     }
 
-    public void setRole(UserRole role) {
+    public void setRole(String role) {
         this.role = role;
     }
 
@@ -134,11 +121,19 @@ public class MeResponse {
         this.avatarSizeMB = avatarSizeMB;
     }
 
-    public Instant getBirthDate() {
+    public String getAvatarFilePath() {
+        return avatarFilePath;
+    }
+
+    public void setAvatarFilePath(String avatarFilePath) {
+        this.avatarFilePath = avatarFilePath;
+    }
+
+    public String getBirthDate() {
         return birthDate;
     }
 
-    public void setBirthDate(Instant birthDate) {
+    public void setBirthDate(String birthDate) {
         this.birthDate = birthDate;
     }
 
@@ -150,29 +145,158 @@ public class MeResponse {
         this.socialLinks = socialLinks;
     }
 
-    public String getAvatarFilePath() {
-        return avatarFilePath;
-    }
-
-    private Instant uploadedImgTime;
-
-    public Instant getUploadedImgTime() {
-        return uploadedImgTime;
-    }
-
-    public void setUploadedImgTime(Instant uploadedImgTime) {
-        this.uploadedImgTime = uploadedImgTime;
-    }
-
-    public void setAvatarFilePath(String avatarFilePath) {
-        this.avatarFilePath = avatarFilePath;
-    }
-
-    public ZonedDateTime getLastOnline() {
+    public String getLastOnline() {
         return lastOnline;
     }
 
-    public void setLastOnline(ZonedDateTime lastOnline) {
+    public void setLastOnline(String lastOnline) {
         this.lastOnline = lastOnline;
+    }
+
+    public static class SocialLinks {
+        private String telegram;
+        private String email;
+        private String instagram;
+        private String facebook;
+        private String linkedin;
+        private String twitter;
+        private String tiktok;
+        private String github;
+        private String gitlab;
+        private String stackoverflow;
+        private String youtube;
+        private String medium;
+        private String blog;
+        private String website;
+        private String portfolio;
+        private String resume;
+
+        public String getTelegram() {
+            return telegram;
+        }
+
+        public void setTelegram(String telegram) {
+            this.telegram = telegram;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getInstagram() {
+            return instagram;
+        }
+
+        public void setInstagram(String instagram) {
+            this.instagram = instagram;
+        }
+
+        public String getFacebook() {
+            return facebook;
+        }
+
+        public void setFacebook(String facebook) {
+            this.facebook = facebook;
+        }
+
+        public String getLinkedin() {
+            return linkedin;
+        }
+
+        public void setLinkedin(String linkedin) {
+            this.linkedin = linkedin;
+        }
+
+        public String getTwitter() {
+            return twitter;
+        }
+
+        public void setTwitter(String twitter) {
+            this.twitter = twitter;
+        }
+
+        public String getTiktok() {
+            return tiktok;
+        }
+
+        public void setTiktok(String tiktok) {
+            this.tiktok = tiktok;
+        }
+
+        public String getGithub() {
+            return github;
+        }
+
+        public void setGithub(String github) {
+            this.github = github;
+        }
+
+        public String getGitlab() {
+            return gitlab;
+        }
+
+        public void setGitlab(String gitlab) {
+            this.gitlab = gitlab;
+        }
+
+        public String getStackoverflow() {
+            return stackoverflow;
+        }
+
+        public void setStackoverflow(String stackoverflow) {
+            this.stackoverflow = stackoverflow;
+        }
+
+        public String getYoutube() {
+            return youtube;
+        }
+
+        public void setYoutube(String youtube) {
+            this.youtube = youtube;
+        }
+
+        public String getMedium() {
+            return medium;
+        }
+
+        public void setMedium(String medium) {
+            this.medium = medium;
+        }
+
+        public String getBlog() {
+            return blog;
+        }
+
+        public void setBlog(String blog) {
+            this.blog = blog;
+        }
+
+        public String getWebsite() {
+            return website;
+        }
+
+        public void setWebsite(String website) {
+            this.website = website;
+        }
+
+        public String getPortfolio() {
+            return portfolio;
+        }
+
+        public void setPortfolio(String portfolio) {
+            this.portfolio = portfolio;
+        }
+
+        public String getResume() {
+            return resume;
+        }
+
+        public void setResume(String resume) {
+            this.resume = resume;
+        }
     }
 }

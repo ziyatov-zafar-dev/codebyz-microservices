@@ -26,7 +26,6 @@ public class UserDevice {
 
     @Column(length = 300)
     private String userAgent;
-
     @Column(length = 60)
     private String ip;
 

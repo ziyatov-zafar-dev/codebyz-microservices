@@ -65,13 +65,13 @@ public class UserController {
 
     @Hidden
     @GetMapping(value = "/exists/{userid}")
-    public Boolean existsUserById(@PathVariable("userid") UUID userid) {
+    public Boolean existsUserById(@PathVariable UUID userid) {
         return userRepository.findById(userid).isPresent();
     }
 
     @Hidden
     @GetMapping(value = "/exists/user/{userid}")
-    public MeResponse findByUserId(@PathVariable("userid") UUID userid) {
+    public MeResponse findByUserId(@PathVariable UUID userid) {
         return service.me(userid).getData();
     }
 
