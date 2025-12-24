@@ -6,17 +6,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import uz.codebyz.message.domain.MessageType;
 import uz.codebyz.message.dto.payload.MessagePayload;
 import uz.codebyz.message.service.MessageStore;
 import uz.codebyz.message.service.BlockRegistry;
 import uz.codebyz.message.service.TypingRegistry;
+import uz.codebyz.message.storage.FileStorageService;
 
 import java.util.List;
 import java.util.UUID;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -27,11 +31,13 @@ public class MessageApiController {
     private final MessageStore messageStore;
     private final BlockRegistry blockRegistry;
     private final TypingRegistry typingRegistry;
+    private final FileStorageService fileStorageService;
 
-    public MessageApiController(MessageStore messageStore, BlockRegistry blockRegistry, TypingRegistry typingRegistry) {
+    public MessageApiController(MessageStore messageStore, BlockRegistry blockRegistry, TypingRegistry typingRegistry, FileStorageService fileStorageService) {
         this.messageStore = messageStore;
         this.blockRegistry = blockRegistry;
         this.typingRegistry = typingRegistry;
+        this.fileStorageService = fileStorageService;
     }
 
     @PostMapping("/{messageId}/delivered")
@@ -195,10 +201,58 @@ public class MessageApiController {
         return sendMessage(req, MessageType.IMAGE, false, null, null);
     }
 
+    @PostMapping(value = "/send/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Send image (upload)")
+    public ResponseEntity<MessagePayload> sendImageUpload(@RequestParam UUID chatId,
+                                                          @RequestParam UUID senderId,
+                                                          @RequestPart("file") MultipartFile file,
+                                                          @RequestParam(name = "caption", required = false) String caption,
+                                                          HttpServletRequest request) {
+        FileReq fr = storeFile("image", file, request);
+        SendRequest sr = new SendRequest();
+        sr.chatId = chatId;
+        sr.senderId = senderId;
+        sr.content = caption;
+        sr.file = fr;
+        return sendMessage(sr, MessageType.IMAGE, false, null, null);
+    }
+
+    @PostMapping(value = "/send/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Send photo (upload)")
+    public ResponseEntity<MessagePayload> sendPhotoUpload(@RequestParam UUID chatId,
+                                                          @RequestParam UUID senderId,
+                                                          @RequestPart("file") MultipartFile file,
+                                                          @RequestParam(name = "caption", required = false) String caption,
+                                                          HttpServletRequest request) {
+        FileReq fr = storeFile("photo", file, request);
+        SendRequest sr = new SendRequest();
+        sr.chatId = chatId;
+        sr.senderId = senderId;
+        sr.content = caption;
+        sr.file = fr;
+        return sendMessage(sr, MessageType.IMAGE, false, null, null);
+    }
+
     @PostMapping("/send/file")
     @Operation(summary = "Send file message")
     public ResponseEntity<MessagePayload> sendFile(@RequestBody SendRequest req) {
         return sendMessage(req, MessageType.FILE, false, null, null);
+    }
+
+    @PostMapping(value = "/send/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Send file (upload)")
+    public ResponseEntity<MessagePayload> sendFileUpload(@RequestParam UUID chatId,
+                                                         @RequestParam UUID senderId,
+                                                         @RequestPart("file") MultipartFile file,
+                                                         @RequestParam(name = "caption", required = false) String caption,
+                                                         HttpServletRequest request) {
+        FileReq fr = storeFile("file", file, request);
+        SendRequest sr = new SendRequest();
+        sr.chatId = chatId;
+        sr.senderId = senderId;
+        sr.content = caption;
+        sr.file = fr;
+        return sendMessage(sr, MessageType.FILE, false, null, null);
     }
 
     @PostMapping("/send/voice")
@@ -207,10 +261,42 @@ public class MessageApiController {
         return sendMessage(req, MessageType.VOICE, false, null, null);
     }
 
+    @PostMapping(value = "/send/voice", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Send voice (upload)")
+    public ResponseEntity<MessagePayload> sendVoiceUpload(@RequestParam UUID chatId,
+                                                          @RequestParam UUID senderId,
+                                                          @RequestPart("file") MultipartFile file,
+                                                          @RequestParam(name = "caption", required = false) String caption,
+                                                          HttpServletRequest request) {
+        FileReq fr = storeFile("voice", file, request);
+        SendRequest sr = new SendRequest();
+        sr.chatId = chatId;
+        sr.senderId = senderId;
+        sr.content = caption;
+        sr.file = fr;
+        return sendMessage(sr, MessageType.VOICE, false, null, null);
+    }
+
     @PostMapping("/send/video")
     @Operation(summary = "Send video message")
     public ResponseEntity<MessagePayload> sendVideo(@RequestBody SendRequest req) {
         return sendMessage(req, MessageType.VIDEO, false, null, null);
+    }
+
+    @PostMapping(value = "/send/video", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Send video (upload)")
+    public ResponseEntity<MessagePayload> sendVideoUpload(@RequestParam UUID chatId,
+                                                          @RequestParam UUID senderId,
+                                                          @RequestPart("file") MultipartFile file,
+                                                          @RequestParam(name = "caption", required = false) String caption,
+                                                          HttpServletRequest request) {
+        FileReq fr = storeFile("video", file, request);
+        SendRequest sr = new SendRequest();
+        sr.chatId = chatId;
+        sr.senderId = senderId;
+        sr.content = caption;
+        sr.file = fr;
+        return sendMessage(sr, MessageType.VIDEO, false, null, null);
     }
 
     @PostMapping("/{messageId}/reply")
@@ -380,4 +466,30 @@ public class MessageApiController {
         public String mime;
     }
 
+    private FileReq storeFile(String fileType, MultipartFile file, HttpServletRequest request) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
+        }
+        try {
+            var stored = fileStorageService.save(fileType, file);
+            FileReq fr = new FileReq();
+            fr.name = stored.filename();
+            fr.url = buildPublicUrl(request, stored.relativePath());
+            fr.size = stored.size();
+            fr.mime = file.getContentType();
+            return fr;
+        } catch (Exception e) {
+            throw new RuntimeException("File upload failed: " + e.getMessage(), e);
+        }
+    }
+
+    private String buildPublicUrl(HttpServletRequest req, String relativePath) {
+        String base = req.getScheme() + "://" + req.getServerName();
+        int port = req.getServerPort();
+        if (!(req.getScheme().equals("http") && port == 80) && !(req.getScheme().equals("https") && port == 443)) {
+            base = base + ":" + port;
+        }
+        String publicBase = "/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles";
+        return base + publicBase + "/" + relativePath;
+    }
 }

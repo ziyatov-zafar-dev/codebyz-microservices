@@ -23,7 +23,7 @@ storage:
   uploads-dir: uploads
   profile:
     dir: message
-    public-url: http://localhost:${server.port}/odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
+    public-url: /odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
 
 app:
   timezone: Europe/Istanbul
