@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>uz.codebyz</groupId>
-    <artifactId>codebyz-auth-service</artifactId>
+    <artifactId>auth-service</artifactId>
     <version>1.0.0</version>
     <name>CodeByZ Auth Service</name>
     <description>Auth service (JWT + OAuth2 + device limit + login guard)</description>

@@ -13,8 +13,10 @@ import uz.codebyz.auth.common.ResponseDto;
 import uz.codebyz.auth.dto.*;
 import uz.codebyz.auth.security.JwtUser;
 import uz.codebyz.auth.service.UserService;
+import uz.codebyz.auth.user.User;
 import uz.codebyz.auth.user.UserRepository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -60,20 +62,21 @@ public class UserController {
             @RequestParam("file") MultipartFile file,
             HttpServletRequest req
     ) {
-        return service.uploadProfileImage(jwtUser.getUserId(), file,req);
+        return service.uploadProfileImage(jwtUser.getUserId(), file, req);
     }
 
     @Hidden
-    @GetMapping(value = "/exists/{userid}")
-    public Boolean existsUserById(@PathVariable UUID userid) {
-        return userRepository.findById(userid).isPresent();
+    @GetMapping(value = "/exists")
+    public Boolean existsUserById(@RequestParam(value = "userid") UUID userid) {
+        Optional<User> uOp = userRepository.findById(userid);
+        return uOp.isPresent();
     }
 
-    @Hidden
-    @GetMapping(value = "/exists/user/{userid}")
-    public MeResponse findByUserId(@PathVariable UUID userid) {
-        return service.me(userid).getData();
-    }
+//    @Hidden
+//    @GetMapping(value = "/exists/user/{userid}")
+//    public MeResponse findByUserId(@PathVariable UUID userid) {
+//        return service.me(userid).getData();
+//    }
 
     @PostMapping("change-password")
     public ResponseDto<AuthTokensResponse> changePassword(

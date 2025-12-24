@@ -14,7 +14,7 @@
     <modules>
         <module>api-gateway</module>
         <module>auth-service</module>
-        <module>codebyz-user-service</module>
+        <module>ads-service</module>
         <module>message-service</module>
 
     </modules>

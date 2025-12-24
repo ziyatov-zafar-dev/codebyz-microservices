@@ -22,10 +22,10 @@ spring:
             - Path=/swagger-ui/**,/v3/api-docs/**
 
         # USER API
-        - id: user-api
+        - id: ads-api
           uri: http://localhost:8082
           predicates:
-            - Path=/api/users-test/**
+            - Path=/api/ads/**
         # CHATS API
         - id: chat-api
           uri: http://localhost:8083
@@ -49,7 +49,7 @@ springdoc:
     urls:
       - name: Auth Service (8081)
         url: http://localhost:8081/v3/api-docs
-      - name: User Service (8082)
+      - name: Ads Service (8082)
         url: http://localhost:8082/v3/api-docs
       - name: Message and Chat Service (8083)
         url: http://localhost:8083/v3/api-docs

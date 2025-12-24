@@ -17,6 +17,7 @@ import uz.codebyz.message.service.MessageStore;
 import uz.codebyz.message.service.BlockRegistry;
 import uz.codebyz.message.service.TypingRegistry;
 import uz.codebyz.message.storage.FileStorageService;
+import uz.codebyz.message.service.AuthUserClient;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,12 +33,14 @@ public class MessageApiController {
     private final BlockRegistry blockRegistry;
     private final TypingRegistry typingRegistry;
     private final FileStorageService fileStorageService;
+    private final AuthUserClient authUserClient;
 
-    public MessageApiController(MessageStore messageStore, BlockRegistry blockRegistry, TypingRegistry typingRegistry, FileStorageService fileStorageService) {
+    public MessageApiController(MessageStore messageStore, BlockRegistry blockRegistry, TypingRegistry typingRegistry, FileStorageService fileStorageService, AuthUserClient authUserClient) {
         this.messageStore = messageStore;
         this.blockRegistry = blockRegistry;
         this.typingRegistry = typingRegistry;
         this.fileStorageService = fileStorageService;
+        this.authUserClient = authUserClient;
     }
 
     @PostMapping("/{messageId}/delivered")
@@ -203,8 +206,8 @@ public class MessageApiController {
 
     @PostMapping(value = "/send/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Send image (upload)")
-    public ResponseEntity<MessagePayload> sendImageUpload(@RequestParam UUID chatId,
-                                                          @RequestParam UUID senderId,
+    public ResponseEntity<MessagePayload> sendImageUpload(@RequestParam("chatId") UUID chatId,
+                                                          @RequestParam("senderId") UUID senderId,
                                                           @RequestPart("file") MultipartFile file,
                                                           @RequestParam(name = "caption", required = false) String caption,
                                                           HttpServletRequest request) {
@@ -219,8 +222,8 @@ public class MessageApiController {
 
     @PostMapping(value = "/send/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Send photo (upload)")
-    public ResponseEntity<MessagePayload> sendPhotoUpload(@RequestParam UUID chatId,
-                                                          @RequestParam UUID senderId,
+    public ResponseEntity<MessagePayload> sendPhotoUpload(@RequestParam("chatId") UUID chatId,
+                                                          @RequestParam("senderId") UUID senderId,
                                                           @RequestPart("file") MultipartFile file,
                                                           @RequestParam(name = "caption", required = false) String caption,
                                                           HttpServletRequest request) {
@@ -241,8 +244,8 @@ public class MessageApiController {
 
     @PostMapping(value = "/send/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Send file (upload)")
-    public ResponseEntity<MessagePayload> sendFileUpload(@RequestParam UUID chatId,
-                                                         @RequestParam UUID senderId,
+    public ResponseEntity<MessagePayload> sendFileUpload(@RequestParam("chatId") UUID chatId,
+                                                         @RequestParam("senderId") UUID senderId,
                                                          @RequestPart("file") MultipartFile file,
                                                          @RequestParam(name = "caption", required = false) String caption,
                                                          HttpServletRequest request) {
@@ -263,8 +266,8 @@ public class MessageApiController {
 
     @PostMapping(value = "/send/voice", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Send voice (upload)")
-    public ResponseEntity<MessagePayload> sendVoiceUpload(@RequestParam UUID chatId,
-                                                          @RequestParam UUID senderId,
+    public ResponseEntity<MessagePayload> sendVoiceUpload(@RequestParam("chatId") UUID chatId,
+                                                          @RequestParam("senderId") UUID senderId,
                                                           @RequestPart("file") MultipartFile file,
                                                           @RequestParam(name = "caption", required = false) String caption,
                                                           HttpServletRequest request) {
@@ -285,8 +288,8 @@ public class MessageApiController {
 
     @PostMapping(value = "/send/video", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Send video (upload)")
-    public ResponseEntity<MessagePayload> sendVideoUpload(@RequestParam UUID chatId,
-                                                          @RequestParam UUID senderId,
+    public ResponseEntity<MessagePayload> sendVideoUpload(@RequestParam("chatId") UUID chatId,
+                                                          @RequestParam("senderId") UUID senderId,
                                                           @RequestPart("file") MultipartFile file,
                                                           @RequestParam(name = "caption", required = false) String caption,
                                                           HttpServletRequest request) {
@@ -307,7 +310,7 @@ public class MessageApiController {
 
     @PostMapping("/{messageId}/forward")
     @Operation(summary = "Forward message")
-    public ResponseEntity<MessagePayload> forward(@PathVariable String messageId, @RequestBody ForwardRequest req) {
+    public ResponseEntity<MessagePayload> forward(@PathVariable("messageId") String messageId, @RequestBody ForwardRequest req) {
         MessagePayload original = messageStore.find(messageId).orElse(null);
         if (original == null) return ResponseEntity.notFound().build();
         SendRequest send = new SendRequest();
@@ -327,7 +330,7 @@ public class MessageApiController {
 
     @PutMapping("/{messageId}/edit")
     @Operation(summary = "Edit message")
-    public ResponseEntity<MessagePayload> edit(@PathVariable String messageId, @RequestBody EditRequest req) {
+    public ResponseEntity<MessagePayload> edit(@PathVariable("messageId") String messageId, @RequestBody EditRequest req) {
         return messageStore.edit(messageId, req.content)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -335,19 +338,19 @@ public class MessageApiController {
 
     @DeleteMapping("/{messageId}/delete-for-me")
     @Operation(summary = "Delete message for current user")
-    public ResponseEntity<Void> deleteForMe(@PathVariable String messageId, @RequestParam UUID userId) {
+    public ResponseEntity<Void> deleteForMe(@PathVariable("messageId") String messageId, @RequestParam("userId") UUID userId) {
         return messageStore.deleteForUser(messageId, userId) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{messageId}/delete-for-all")
     @Operation(summary = "Delete message for all")
-    public ResponseEntity<Void> deleteForAll(@PathVariable String messageId) {
+    public ResponseEntity<Void> deleteForAll(@PathVariable("messageId") String messageId) {
         return messageStore.deleteForAll(messageId) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/chat/{chatId}")
     @Operation(summary = "Get messages by chat")
-    public ResponseEntity<List<MessagePayload>> getByChat(@PathVariable UUID chatId, @RequestParam(required = false) UUID requesterId) {
+    public ResponseEntity<List<MessagePayload>> getByChat(@PathVariable("chatId") UUID chatId, @RequestParam(value = "requesterId", required = false) UUID requesterId) {
         List<MessagePayload> list = messageStore.list(chatId).stream()
                 .filter(m -> !m.isDeletedForAll())
                 .filter(m -> requesterId == null || !m.getDeletedForUsers().contains(requesterId))
@@ -357,7 +360,7 @@ public class MessageApiController {
 
     @GetMapping("/{messageId}")
     @Operation(summary = "Get message by id")
-    public ResponseEntity<MessagePayload> getById(@PathVariable String messageId) {
+    public ResponseEntity<MessagePayload> getById(@PathVariable("messageId") String messageId) {
         return messageStore.find(messageId)
                 .filter(m -> !m.isDeletedForAll())
                 .map(ResponseEntity::ok)
@@ -366,13 +369,13 @@ public class MessageApiController {
 
     @GetMapping("/chat/{chatId}/search")
     @Operation(summary = "Search messages in chat")
-    public ResponseEntity<List<MessagePayload>> search(@PathVariable UUID chatId, @RequestParam String q) {
+    public ResponseEntity<List<MessagePayload>> search(@PathVariable("chatId") UUID chatId, @RequestParam("q") String q) {
         return ResponseEntity.ok(messageStore.search(chatId, q));
     }
 
     @GetMapping("/chat/{chatId}/last")
     @Operation(summary = "Get last message in chat")
-    public ResponseEntity<MessagePayload> last(@PathVariable UUID chatId) {
+    public ResponseEntity<MessagePayload> last(@PathVariable("chatId") UUID chatId) {
         return messageStore.lastMessage(chatId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -385,6 +388,9 @@ public class MessageApiController {
         }
         if (!system && req.senderId == null) {
             return ResponseEntity.badRequest().build();
+        }
+        if (!system && !authUserClient.userExists(req.senderId)) {
+            return ResponseEntity.status(400).build();
         }
         if (blockRegistry.isPreventSend()) {
             return ResponseEntity.status(403).build();

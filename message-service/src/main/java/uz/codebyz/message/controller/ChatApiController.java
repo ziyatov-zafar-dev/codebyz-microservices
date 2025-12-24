@@ -1,7 +1,6 @@
 package uz.codebyz.message.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import uz.codebyz.message.security.JwtUser;
+import uz.codebyz.message.service.AuthUserClient;
 import uz.codebyz.message.service.ChatDirectory;
 
 import java.util.*;
@@ -22,9 +22,11 @@ import java.util.*;
 public class ChatApiController {
 
     private final ChatDirectory chatDirectory;
+    private final AuthUserClient authUserClient;
 
-    public ChatApiController(ChatDirectory chatDirectory) {
+    public ChatApiController(ChatDirectory chatDirectory, AuthUserClient authUserClient) {
         this.chatDirectory = chatDirectory;
+        this.authUserClient = authUserClient;
     }
 
     @PostMapping("/private")
@@ -35,6 +37,9 @@ public class ChatApiController {
                                                                 @AuthenticationPrincipal JwtUser principal) {
         if (principal == null || req.user2Id == null) {
             return ResponseEntity.badRequest().build();
+        }
+        if (!authUserClient.userExists(principal.getUserId()) || !authUserClient.userExists(req.user2Id)) {
+            return ResponseEntity.status(400).body(null);
         }
         UUID chatId = req.chatId == null ? UUID.randomUUID() : req.chatId;
         // ensure uniqueness by participants: if exists, reuse
@@ -55,7 +60,7 @@ public class ChatApiController {
 
     @GetMapping("/{chatId}")
     @Operation(summary = "Get chat info", description = "Returns chat state for requester.")
-    public ResponseEntity<ChatDirectory.ChatView> get(@PathVariable UUID chatId, @AuthenticationPrincipal JwtUser principal) {
+    public ResponseEntity<ChatDirectory.ChatView> get(@PathVariable("chatId") UUID chatId, @AuthenticationPrincipal JwtUser principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         return chatDirectory.view(chatId, principal.getUserId())
                 .map(ResponseEntity::ok)
@@ -65,24 +70,26 @@ public class ChatApiController {
     @GetMapping("/exists")
     @Operation(summary = "Check chat exists between two users", description = "Returns boolean")
     public ResponseEntity<Map<String, Boolean>> exists(@RequestParam UUID user1, @RequestParam UUID user2) {
-        boolean found = chatDirectory.findByUsers(user1, user2).isPresent();
-        return ResponseEntity.ok(Map.of("exists", found));
+        boolean u1 = authUserClient.userExists(user1);
+        boolean u2 = authUserClient.userExists(user2);
+        boolean found = u1 && u2 && chatDirectory.findByUsers(user1, user2).isPresent();
+        return ResponseEntity.ok(Map.of("exists", found, "user1Exists", u1, "user2Exists", u2));
     }
 
     @DeleteMapping("/{chatId}")
     @Operation(summary = "Delete chat", description = "Removes chat from memory.")
-    public ResponseEntity<?> delete(@PathVariable UUID chatId, @AuthenticationPrincipal JwtUser principal) {
+    public ResponseEntity<?> delete(@PathVariable(value = "chatId") UUID chat_id, @AuthenticationPrincipal JwtUser principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         // only participants can delete
-        return chatDirectory.find(chatId)
+        return chatDirectory.find(chat_id)
                 .filter(c -> c.isParticipant(principal.getUserId()))
-                .map(c -> chatDirectory.delete(chatId) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build())
+                .map(c -> chatDirectory.delete(chat_id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build())
                 .orElse(ResponseEntity.status(403).build());
     }
 
     @DeleteMapping("/{chatId}/clear")
     @Operation(summary = "Clear chat events buffer", description = "Clears stored event buffer for replay.")
-    public ResponseEntity<?> clear(@PathVariable UUID chatId, @AuthenticationPrincipal JwtUser principal) {
+    public ResponseEntity<?> clear(@PathVariable("chatId") UUID chatId, @AuthenticationPrincipal JwtUser principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         return chatDirectory.find(chatId).map(c -> {
             if (!c.isParticipant(principal.getUserId())) return ResponseEntity.status(403).build();
@@ -93,7 +100,7 @@ public class ChatApiController {
 
     @PostMapping("/{chatId}/mute")
     @Operation(summary = "Mute chat", description = "Marks chat muted for requester.")
-    public ResponseEntity<?> mute(@PathVariable UUID chatId, @AuthenticationPrincipal JwtUser principal) {
+    public ResponseEntity<?> mute(@PathVariable("chatId") UUID chatId, @AuthenticationPrincipal JwtUser principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         return chatDirectory.find(chatId).map(c -> {
             if (!c.isParticipant(principal.getUserId())) return ResponseEntity.status(403).build();
@@ -104,7 +111,7 @@ public class ChatApiController {
 
     @PostMapping("/{chatId}/unmute")
     @Operation(summary = "Unmute chat", description = "Unmutes chat for requester.")
-    public ResponseEntity<?> unmute(@PathVariable UUID chatId, @AuthenticationPrincipal JwtUser principal) {
+    public ResponseEntity<?> unmute(@PathVariable("chatId") UUID chatId, @AuthenticationPrincipal JwtUser principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         return chatDirectory.find(chatId).map(c -> {
             if (!c.isParticipant(principal.getUserId())) return ResponseEntity.status(403).build();
@@ -115,7 +122,7 @@ public class ChatApiController {
 
     @PostMapping("/{chatId}/pin")
     @Operation(summary = "Pin chat", description = "Pins chat for requester.")
-    public ResponseEntity<?> pin(@PathVariable UUID chatId, @AuthenticationPrincipal JwtUser principal) {
+    public ResponseEntity<?> pin(@PathVariable("chatId") UUID chatId, @AuthenticationPrincipal JwtUser principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         return chatDirectory.find(chatId).map(c -> {
             if (!c.isParticipant(principal.getUserId())) return ResponseEntity.status(403).build();
@@ -126,7 +133,7 @@ public class ChatApiController {
 
     @PostMapping("/{chatId}/unpin")
     @Operation(summary = "Unpin chat", description = "Unpins chat for requester.")
-    public ResponseEntity<?> unpin(@PathVariable UUID chatId, @AuthenticationPrincipal JwtUser principal) {
+    public ResponseEntity<?> unpin(@PathVariable("chatId") UUID chatId, @AuthenticationPrincipal JwtUser principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         return chatDirectory.find(chatId).map(c -> {
             if (!c.isParticipant(principal.getUserId())) return ResponseEntity.status(403).build();
