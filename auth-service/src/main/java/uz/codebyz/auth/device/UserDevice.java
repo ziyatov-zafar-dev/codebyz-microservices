@@ -1,6 +1,7 @@
 package uz.codebyz.auth.device;
 
 import jakarta.persistence.*;
+import uz.codebyz.auth.location.Timezone;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -32,7 +33,7 @@ public class UserDevice {
     @Column(length = 80)
     private String region;
     @Column(length = 24)
-    private String timezone;
+    private Timezone timezone;
     @Column(length = 40)
     private String isp;
 
@@ -121,11 +122,11 @@ public class UserDevice {
         this.region = region;
     }
 
-    public String getTimezone() {
+    public Timezone getTimezone() {
         return timezone;
     }
 
-    public void setTimezone(String timezone) {
+    public void setTimezone(Timezone timezone) {
         this.timezone = timezone;
     }
 

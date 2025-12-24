@@ -1,5 +1,7 @@
 package uz.codebyz.auth.dto;
 
+import uz.codebyz.auth.location.Timezone;
+
 import java.time.Instant;
 
 public class DeviceResponse {
@@ -9,7 +11,7 @@ public class DeviceResponse {
     private String country;
     private String region;
     private String city;
-    private String timezone;
+    private Timezone timezone;
     private String isp;
     private Instant lastLoginAt;
     private String deviceName;
@@ -35,8 +37,15 @@ public class DeviceResponse {
     public void setRegion(String region) { this.region = region; }
     public String getCity() { return city; }
     public void setCity(String city) { this.city = city; }
-    public String getTimezone() { return timezone; }
-    public void setTimezone(String timezone) { this.timezone = timezone; }
+
+    public Timezone getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(Timezone timezone) {
+        this.timezone = timezone;
+    }
+
     public String getIsp() { return isp; }
     public void setIsp(String isp) { this.isp = isp; }
     public Instant getLastLoginAt() { return lastLoginAt; }
