@@ -398,15 +398,6 @@ public class AuthService {
         existing.setLastLoginAt(Instant.now());
         existing.setActive(true);
         existing.setDeviceName(DeviceNameUtil.parse(userAgent));
-        IpWhoIsResponse loc = ipWhoIsClient.lookup(ip);
-        if (loc != null && loc.isSuccess()) {
-            existing.setCountry(loc.getCountry());
-            existing.setRegion(loc.getRegion());
-            existing.setCity(loc.getCity());
-            existing.setTimezone(loc.getTimezone());
-            existing.setIsp(loc.getIsp());
-        }
-
         deviceRepo.save(existing);
         return ResponseDto.ok("OK");
     }

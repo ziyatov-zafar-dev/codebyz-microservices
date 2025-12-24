@@ -7,6 +7,7 @@ import uz.codebyz.auth.common.ResponseDto;
 import uz.codebyz.auth.device.UserDevice;
 import uz.codebyz.auth.device.UserDeviceRepository;
 import uz.codebyz.auth.dto.DeviceResponse;
+import uz.codebyz.auth.location.IpWhoIsClient;
 import uz.codebyz.auth.session.RefreshTokenRepository;
 import uz.codebyz.auth.session.RevokedAccessToken;
 import uz.codebyz.auth.session.RevokedAccessTokenRepository;
@@ -21,11 +22,13 @@ public class DeviceService {
     private final UserDeviceRepository deviceRepo;
     private final RefreshTokenRepository refreshRepo;
     private final RevokedAccessTokenRepository revokedAccessTokenRepository;
+    private final IpWhoIsClient ipWhoIsClient;
 
-    public DeviceService(UserDeviceRepository deviceRepo, RefreshTokenRepository refreshRepo, RevokedAccessTokenRepository revokedAccessTokenRepository) {
+    public DeviceService(UserDeviceRepository deviceRepo, RefreshTokenRepository refreshRepo, RevokedAccessTokenRepository revokedAccessTokenRepository, IpWhoIsClient ipWhoIsClient) {
         this.deviceRepo = deviceRepo;
         this.refreshRepo = refreshRepo;
         this.revokedAccessTokenRepository = revokedAccessTokenRepository;
+        this.ipWhoIsClient = ipWhoIsClient;
     }
 
     @Transactional(readOnly = true)
@@ -38,11 +41,7 @@ public class DeviceService {
             r.setActive(d.isActive());
             r.setIp(d.getIp());
             r.setDeviceName(d.getDeviceName());
-            r.setCountry(d.getCountry());
-            r.setRegion(d.getRegion());
-            r.setCity(d.getCity());
-            r.setTimezone(d.getTimezone());
-            r.setIsp(d.getIsp());
+            r.setLocation(ipWhoIsClient.lookup(r.getIp()));
             r.setLastLoginAt(d.getLastLoginAt());
             r.setMe(deviceId.equals(d.getDeviceId()));
             out.add(r);
@@ -94,7 +93,6 @@ public class DeviceService {
 
         return ResponseDto.ok("Device logged out successfully");
     }
-
 
 
     @Transactional

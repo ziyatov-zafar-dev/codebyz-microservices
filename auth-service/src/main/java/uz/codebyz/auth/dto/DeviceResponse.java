@@ -1,5 +1,6 @@
 package uz.codebyz.auth.dto;
 
+import uz.codebyz.auth.location.IpWhoIsResponse;
 import uz.codebyz.auth.location.Timezone;
 
 import java.time.Instant;
@@ -8,11 +9,7 @@ public class DeviceResponse {
     private String deviceId;
     private boolean active;
     private String ip;
-    private String country;
-    private String region;
-    private String city;
-    private Timezone timezone;
-    private String isp;
+    private IpWhoIsResponse location;
     private Instant lastLoginAt;
     private String deviceName;
     private Boolean me;
@@ -25,31 +22,38 @@ public class DeviceResponse {
         this.deviceName = deviceName;
     }
 
-    public String getDeviceId() { return deviceId; }
-    public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
-    public String getIp() { return ip; }
-    public void setIp(String ip) { this.ip = ip; }
-    public String getCountry() { return country; }
-    public void setCountry(String country) { this.country = country; }
-    public String getRegion() { return region; }
-    public void setRegion(String region) { this.region = region; }
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
-
-    public Timezone getTimezone() {
-        return timezone;
+    public String getDeviceId() {
+        return deviceId;
     }
 
-    public void setTimezone(Timezone timezone) {
-        this.timezone = timezone;
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
     }
 
-    public String getIsp() { return isp; }
-    public void setIsp(String isp) { this.isp = isp; }
-    public Instant getLastLoginAt() { return lastLoginAt; }
-    public void setLastLoginAt(Instant lastLoginAt) { this.lastLoginAt = lastLoginAt; }
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(Instant lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
 
     public Boolean getMe() {
         return me;
@@ -57,5 +61,13 @@ public class DeviceResponse {
 
     public void setMe(Boolean me) {
         this.me = me;
+    }
+
+    public IpWhoIsResponse getLocation() {
+        return location;
+    }
+
+    public void setLocation(IpWhoIsResponse location) {
+        this.location = location;
     }
 }

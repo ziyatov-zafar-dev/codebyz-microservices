@@ -26,16 +26,6 @@ public class UserDevice {
     @Column(length = 60)
     private String ip;
 
-    @Column(length = 80)
-    private String country;
-    @Column(length = 80)
-    private String city;
-    @Column(length = 80)
-    private String region;
-    @Column(length = 24)
-    private Timezone timezone;
-    @Column(length = 40)
-    private String isp;
 
     @Column(nullable = false)
     private boolean active;
@@ -98,45 +88,6 @@ public class UserDevice {
         this.ip = ip;
     }
 
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    public Timezone getTimezone() {
-        return timezone;
-    }
-
-    public void setTimezone(Timezone timezone) {
-        this.timezone = timezone;
-    }
-
-    public String getIsp() {
-        return isp;
-    }
-
-    public void setIsp(String isp) {
-        this.isp = isp;
-    }
 
     public boolean isActive() {
         return active;
