@@ -7,6 +7,7 @@ import uz.codebyz.auth.common.ResponseDto;
 import uz.codebyz.auth.device.UserDevice;
 import uz.codebyz.auth.device.UserDeviceRepository;
 import uz.codebyz.auth.dto.DeviceResponse;
+import uz.codebyz.auth.location.AddressResponse;
 import uz.codebyz.auth.location.IpWhoIsClient;
 import uz.codebyz.auth.location.IpWhoIsResponse;
 import uz.codebyz.auth.session.RefreshTokenRepository;
@@ -38,6 +39,7 @@ public class DeviceService {
         List<DeviceResponse> out = new ArrayList<>();
         for (UserDevice d : devices) {
             IpWhoIsResponse lookup = ipWhoIsClient.lookup(d.getIp());
+            AddressResponse deviceAddress = ipWhoIsClient.getAddress(lookup.getLatitude(), lookup.getLongitude(), lookup.getCountry_code());
             DeviceResponse r = new DeviceResponse(
                     d.getDeviceId(),
                     d.isActive(),
@@ -50,7 +52,15 @@ public class DeviceService {
                     d.getUserAgent(),
                     d.getDeviceType(),
                     d.getBrowserVersion(),
-                    ipWhoIsClient.getAddress(lookup.getLatitude(), lookup.getLongitude(),lookup.getCountry_code())
+                    deviceAddress,
+                    "%s, %s, %s %s, %s"
+                            .formatted(
+                                    deviceAddress.getResults().get(0).getStreet(),        // Köroğlu Deresi
+                                    deviceAddress.getResults().get(0).getSuburb(),        // Cebeci Mahallesi
+                                    deviceAddress.getResults().get(0).getCity(),          // Sultangazi
+                                    deviceAddress.getResults().get(0).getPostcode(),      // 34270
+                                    deviceAddress.getResults().get(0).getCountry()        // Türkiye
+                            )
             );
             out.add(r);
         }

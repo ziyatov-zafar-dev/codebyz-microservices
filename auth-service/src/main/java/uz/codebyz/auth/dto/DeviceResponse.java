@@ -69,6 +69,17 @@ public class DeviceResponse {
         this.deviceName = deviceName;
     }
 
+    private String fullAddress;
+
+    public String getFullAddress() {
+
+        return fullAddress;
+    }
+
+    public void setFullAddress(String fullAddress) {
+        this.fullAddress = fullAddress;
+    }
+
     public String getDeviceId() {
         return deviceId;
     }
@@ -121,7 +132,8 @@ public class DeviceResponse {
     public DeviceResponse(String deviceId, boolean active, String ip, IpWhoIsResponse location,
                           Instant lastLoginAt, String deviceName, Boolean me,
                           String browserName, String userAgent, DeviceType deviceType,
-                          String browserVersion, AddressResponse deviceAddress) {
+                          String browserVersion, AddressResponse deviceAddress,
+                          String fullAddress) {
         this.deviceId = deviceId;
         this.active = active;
         this.ip = ip;
@@ -134,5 +146,6 @@ public class DeviceResponse {
         this.deviceType = deviceType;
         this.browserVersion = browserVersion;
         this.deviceAddress = deviceAddress;
+        this.fullAddress=fullAddress;
     }
 }

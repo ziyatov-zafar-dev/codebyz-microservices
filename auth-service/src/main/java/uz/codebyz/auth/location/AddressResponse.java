@@ -29,7 +29,6 @@ public class AddressResponse {
     // ===================== RESULT =====================
     public static class Result {
 
-        private Datasource datasource;
         private String name;
 
         @SerializedName("other_names")
@@ -84,13 +83,6 @@ public class AddressResponse {
 
         private Bbox bbox;
 
-        public Datasource getDatasource() {
-            return datasource;
-        }
-
-        public void setDatasource(Datasource datasource) {
-            this.datasource = datasource;
-        }
 
         public String getName() {
             return name;
@@ -293,47 +285,7 @@ public class AddressResponse {
             return timezone;
         }
     }
-
-    // ===================== DATASOURCE =====================
-    public static class Datasource {
-        private String sourcename;
-        private String attribution;
-
-        public String getSourcename() {
-            return sourcename;
-        }
-
-        public void setSourcename(String sourcename) {
-            this.sourcename = sourcename;
-        }
-
-        public String getAttribution() {
-            return attribution;
-        }
-
-        public void setAttribution(String attribution) {
-            this.attribution = attribution;
-        }
-
-        public String getLicense() {
-            return license;
-        }
-
-        public void setLicense(String license) {
-            this.license = license;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        private String license;
-        private String url;
-    }
+    
 
     // ===================== TIMEZONE =====================
     public static class Timezone {
