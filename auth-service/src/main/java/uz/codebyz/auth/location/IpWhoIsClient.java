@@ -50,15 +50,13 @@ public class IpWhoIsClient {
     }
 
     public AddressResponse getAddress(Double latitude, Double longitude, String lang) {
-        String urlPath = "https://nominatim.openstreetmap.org/reverse?format=json&lat=" + latitude + "&lon="
-                + longitude + "&zoom=18&addressdetails=1&accept-language=" + lang.toLowerCase();
+        String urlPath = "https://api.geoapify.com/v1/geocode/reverse?lat=" + latitude + "&lon=" + longitude + "&lang=" + (lang.toLowerCase()) + "&format=json&apiKey=daf3e4515e1246988b41e5b4d29bff1c";
         Gson gson = new Gson();
         URL url;
         URLConnection connection;
         BufferedReader reader = null;
         try {
             url = new URL(urlPath);
-            String ur = "%s";
             connection = url.openConnection();
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             String json = "", line;
