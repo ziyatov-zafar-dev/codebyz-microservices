@@ -1,6 +1,7 @@
 package uz.codebyz.auth.location;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nimbusds.jose.shaded.gson.annotations.SerializedName;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -10,6 +11,7 @@ public class IpWhoIsResponse {
     private String type;
     private String continent;
     private String country;
+    @JsonProperty("countryCode")
     private String country_code;
     private String region;
     private String city;

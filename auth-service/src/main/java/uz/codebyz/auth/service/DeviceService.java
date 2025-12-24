@@ -39,7 +39,11 @@ public class DeviceService {
         List<DeviceResponse> out = new ArrayList<>();
         for (UserDevice d : devices) {
             IpWhoIsResponse lookup = ipWhoIsClient.lookup(d.getIp());
-            AddressResponse deviceAddress = ipWhoIsClient.getAddress(lookup.getLatitude(), lookup.getLongitude(), lookup.getCountry_code());
+            AddressResponse deviceAddress = ipWhoIsClient.getAddress(
+                    lookup.getLatitude(),
+                    lookup.getLongitude(),
+                    lookup.getCountry_code()
+            );
             DeviceResponse r = new DeviceResponse(
                     d.getDeviceId(),
                     d.isActive(),

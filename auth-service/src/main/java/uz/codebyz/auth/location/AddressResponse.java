@@ -5,13 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 public class AddressResponse {
-
     private List<Result> results;
-
     public void setQuery(Query query) {
         this.query = query;
     }
-
     public void setResults(List<Result> results) {
         this.results = results;
     }
@@ -285,7 +282,7 @@ public class AddressResponse {
             return timezone;
         }
     }
-    
+
 
     // ===================== TIMEZONE =====================
     public static class Timezone {

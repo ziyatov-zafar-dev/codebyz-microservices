@@ -1,5 +1,6 @@
 package uz.codebyz.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import uz.codebyz.auth.device.enums.DeviceType;
 import uz.codebyz.auth.location.AddressResponse;
 import uz.codebyz.auth.location.IpWhoIsResponse;
@@ -69,10 +70,10 @@ public class DeviceResponse {
         this.deviceName = deviceName;
     }
 
+    @JsonProperty("full_device_login_to_address")
     private String fullAddress;
 
     public String getFullAddress() {
-
         return fullAddress;
     }
 
@@ -146,6 +147,6 @@ public class DeviceResponse {
         this.deviceType = deviceType;
         this.browserVersion = browserVersion;
         this.deviceAddress = deviceAddress;
-        this.fullAddress=fullAddress;
+        this.fullAddress = fullAddress;
     }
 }

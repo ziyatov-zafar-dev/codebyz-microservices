@@ -50,7 +50,11 @@ public class IpWhoIsClient {
     }
 
     public AddressResponse getAddress(Double latitude, Double longitude, String lang) {
-        String urlPath = "https://api.geoapify.com/v1/geocode/reverse?lat=" + latitude + "&lon=" + longitude + "&lang=" + (lang.toLowerCase()) + "&format=json&apiKey=daf3e4515e1246988b41e5b4d29bff1c";
+        String urlPath = "https://api.geoapify.com/v1/geocode/reverse?" +
+                "lat=" + latitude +
+                "&lon=" + longitude +
+                "&lang=" + (lang.toLowerCase()) +
+                "&format=json&apiKey=daf3e4515e1246988b41e5b4d29bff1c";
         Gson gson = new Gson();
         URL url;
         URLConnection connection;
