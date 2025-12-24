@@ -53,15 +53,15 @@ public class DeviceService {
                     d.getDeviceType(),
                     d.getBrowserVersion(),
                     deviceAddress,
-                    "%s, %s, %s %s, %s"
+                    "%s, %s, %s, %s %s, %s"
                             .formatted(
-                                    deviceAddress.getResults().get(0).getStreet(),        // Köroğlu Deresi
-                                    deviceAddress.getResults().get(0).getSuburb(),        // Cebeci Mahallesi
-                                    deviceAddress.getResults().get(0).getCity(),          // Sultangazi
-                                    deviceAddress.getResults().get(0).getPostcode(),      // 34270
-                                    deviceAddress.getResults().get(0).getCountry()        // Türkiye
-                            )
-            );
+                                    deviceAddress.getResults().get(0).getStreet(),      // Köroğlu Deresi
+                                    deviceAddress.getResults().get(0).getSuburb(),      // Cebeci Mahallesi
+                                    deviceAddress.getResults().get(0).getCity(),        // Sultangazi
+                                    deviceAddress.getResults().get(0).getCounty(),      // İstanbul
+                                    deviceAddress.getResults().get(0).getPostcode(),    // 34270
+                                    deviceAddress.getResults().get(0).getCountry()      // Türkiye
+                            ));
             out.add(r);
         }
         return ResponseDto.ok("OK", out);
