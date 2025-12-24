@@ -36,14 +36,19 @@ public class DeviceService {
         List<UserDevice> devices = deviceRepo.findActiveByUserId(userId);
         List<DeviceResponse> out = new ArrayList<>();
         for (UserDevice d : devices) {
-            DeviceResponse r = new DeviceResponse();
-            r.setDeviceId(d.getDeviceId());
-            r.setActive(d.isActive());
-            r.setIp(d.getIp());
-            r.setDeviceName(d.getDeviceName());
-            r.setLocation(ipWhoIsClient.lookup(r.getIp()));
-            r.setLastLoginAt(d.getLastLoginAt());
-            r.setMe(deviceId.equals(d.getDeviceId()));
+            DeviceResponse r = new DeviceResponse(
+                    d.getDeviceId(),
+                    d.isActive(),
+                    d.getIp(),
+                    ipWhoIsClient.lookup(d.getIp()),
+                    d.getLastLoginAt(),
+                    d.getDeviceName(),
+                    deviceId.equals(d.getDeviceId()),
+                    d.getBrowserName(),
+                    d.getUserAgent(),
+                    d.getDeviceType(),
+                    d.getBrowserVersion()
+            );
             out.add(r);
         }
         return ResponseDto.ok("OK", out);

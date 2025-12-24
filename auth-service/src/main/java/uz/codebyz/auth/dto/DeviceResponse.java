@@ -1,5 +1,6 @@
 package uz.codebyz.auth.dto;
 
+import uz.codebyz.auth.device.enums.DeviceType;
 import uz.codebyz.auth.location.IpWhoIsResponse;
 import uz.codebyz.auth.location.Timezone;
 
@@ -13,6 +14,42 @@ public class DeviceResponse {
     private Instant lastLoginAt;
     private String deviceName;
     private Boolean me;
+    private String browserName;    // Chrome, Firefox, Edge
+    private String userAgent;
+    private DeviceType deviceType;
+    private String browserVersion; // 120.0.6099.71
+
+    public String getBrowserName() {
+        return browserName;
+    }
+
+    public void setBrowserName(String browserName) {
+        this.browserName = browserName;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
+
+    public DeviceType getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(DeviceType deviceType) {
+        this.deviceType = deviceType;
+    }
+
+    public String getBrowserVersion() {
+        return browserVersion;
+    }
+
+    public void setBrowserVersion(String browserVersion) {
+        this.browserVersion = browserVersion;
+    }
 
     public String getDeviceName() {
         return deviceName;
@@ -69,5 +106,22 @@ public class DeviceResponse {
 
     public void setLocation(IpWhoIsResponse location) {
         this.location = location;
+    }
+
+    public DeviceResponse(String deviceId, boolean active, String ip, IpWhoIsResponse location,
+                          Instant lastLoginAt, String deviceName, Boolean me,
+                          String browserName, String userAgent, DeviceType deviceType,
+                          String browserVersion) {
+        this.deviceId = deviceId;
+        this.active = active;
+        this.ip = ip;
+        this.location = location;
+        this.lastLoginAt = lastLoginAt;
+        this.deviceName = deviceName;
+        this.me = me;
+        this.browserName = browserName;
+        this.userAgent = userAgent;
+        this.deviceType = deviceType;
+        this.browserVersion = browserVersion;
     }
 }

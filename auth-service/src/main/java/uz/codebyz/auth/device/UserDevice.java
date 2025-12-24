@@ -1,6 +1,7 @@
 package uz.codebyz.auth.device;
 
 import jakarta.persistence.*;
+import uz.codebyz.auth.device.enums.DeviceType;
 import uz.codebyz.auth.location.Timezone;
 
 import java.time.Instant;
@@ -13,7 +14,10 @@ public class UserDevice {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid")
     private UUID id;
-
+    private String browserName;    // Chrome, Firefox, Edge
+    @Enumerated(EnumType.STRING)
+    private DeviceType deviceType;
+    private String browserVersion; // 120.0.6099.71
     @Column(nullable = false, columnDefinition = "uuid")
     private UUID userId;
 
@@ -33,12 +37,29 @@ public class UserDevice {
     private String deviceName;
 
 
-
     @Column(nullable = false)
     private Instant lastLoginAt = Instant.now();
 
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
+
+    public UserDevice(String browserName, DeviceType deviceType, String browserVersion, UUID userId, String deviceId, String userAgent, String ip, boolean active, String deviceName, Instant lastLoginAt, Instant createdAt) {
+        this.browserName = browserName;
+        this.deviceType = deviceType;
+        this.browserVersion = browserVersion;
+        this.userId = userId;
+        this.deviceId = deviceId;
+        this.userAgent = userAgent;
+        this.ip = ip;
+        this.active = active;
+        this.deviceName = deviceName;
+        this.lastLoginAt = lastLoginAt;
+        this.createdAt = createdAt;
+    }
+
+    public UserDevice() {
+
+    }
 
     @PrePersist
     public void prePersist() {
@@ -119,5 +140,29 @@ public class UserDevice {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getBrowserName() {
+        return browserName;
+    }
+
+    public void setBrowserName(String browserName) {
+        this.browserName = browserName;
+    }
+
+    public DeviceType getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(DeviceType deviceType) {
+        this.deviceType = deviceType;
+    }
+
+    public String getBrowserVersion() {
+        return browserVersion;
+    }
+
+    public void setBrowserVersion(String browserVersion) {
+        this.browserVersion = browserVersion;
     }
 }
