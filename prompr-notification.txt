@@ -1,0 +1,55 @@
+Frontend + backend Web Push prompt (Chrome yopiq holatda ham notification)
+
+1) VAPID kalitlari
+   - Public: BKmqVFVyTf3NaLw3MCySGgL5Gmhywaai8NwBL9MyjZkDR9ycwF0ucx28aY94sUk4NcQLJQ6KUq6iHALUK4U
+   - Private (faqat backend): GmMQSi8SqQRNQ2oSz6osXu0OCycSi-VBHYXf0GIdMMs
+   - Subject: WEBPUSH_VAPID_SUBJECT=http://localhost (yoki mailto:you@example.com)
+
+2) Backend env/config
+   - WEBPUSH_VAPID_PUBLIC_KEY=BKmqVFVyTf3NaLw3MCySGgL5Gmhywaai8NwBL9MyjZkDR9ycwF0ucx28aY94sUk4NcQLJQ6KUq6iHALUK4U
+   - WEBPUSH_VAPID_PRIVATE_KEY=GmMQSi8SqQRNQ2oSz6osXu0OCycSi-VBHYXf0GIdMMs
+   - WEBPUSH_VAPID_SUBJECT=http://localhost
+   (application.yml dagi webpush.vapid.public-key/private-key/subject shu env orqali to‘ladi)
+
+3) Frontend env
+   - .env: VITE_VAPID_PUBLIC_KEY=BKmqVFVyTf3NaLw3MCySGgL5Gmhywaai8NwBL9MyjZkDR9ycwF0ucx28aY94sUk4NcQLJQ6KUq6iHALUK4U
+
+4) Frontend subscribe qadamlar
+   - Service Worker: navigator.serviceWorker.register('/sw.js')
+   - Subscribe:
+     const registration = await navigator.serviceWorker.ready;
+     const subscription = await registration.pushManager.subscribe({
+       userVisibleOnly: true,
+       applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
+     });
+   - Subscriptionni backendga yuborish:
+     await fetch('http://localhost:8083/api/push/subscribe', {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+         'Authorization': `Bearer ${accessToken}`
+       },
+       body: JSON.stringify({ userId: jwtSubject, subscription })
+     });
+
+5) Service Worker (sw.js) push listener
+   self.addEventListener('push', e => {
+     const data = e.data?.json() || {};
+     e.waitUntil(self.registration.showNotification(data.title || 'New message', {
+       body: data.body,
+       data: { chatId: data.chatId, senderId: data.senderId }
+     }));
+   });
+   self.addEventListener('notificationclick', e => {
+     e.notification.close();
+     e.waitUntil(clients.openWindow('/chat/' + (e.notification.data?.chatId || '')));
+   });
+
+6) Backend oqimi
+   - `POST /api/push/subscribe` subscriptionni userId bo‘yicha saqlaydi (Mongo collection push_subscriptions).
+   - `NEW_MESSAGE` eventida `WebPushService` saqlangan subscriptionlarga push yuboradi; ishlamagan subscription o‘chiriladi.
+   - MessageService allaqachon sendNewMessageNotification chaqiradi.
+
+7) Natija
+   - Tab ochiqda STOMP real-time ishlaydi.
+   - Chrome yopiq bo‘lsa ham OS notification chiqadi (sw.js showNotification), click → /chat/<chatId> ochiladi.

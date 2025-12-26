@@ -4,30 +4,35 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-public class JwtUser implements UserDetails {
+public class JwtUser implements UserDetails, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private final UUID userId;
-    private final String role;
+    private final List<String> roles;
 
-    public JwtUser(UUID userId, String role) {
+    public JwtUser(UUID userId, List<String> roles) {
         this.userId = userId;
-        this.role = role;
+        this.roles = roles;
     }
 
     public UUID getUserId() {
         return userId;
     }
 
-    public String getRole() {
-        return role;
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        return roles.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 
     @Override

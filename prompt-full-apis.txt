@@ -1,0 +1,195 @@
+To‘liq professional prompt: Auth-service + Message-service (REST, STOMP, Web Push)
+
+==========================
+1. Bazaviy ma’lumotlar
+==========================
+- Auth-service: http://localhost:8081
+- Message-service REST: http://localhost:8083
+- WebSocket (SockJS + STOMP): ws://localhost:8083/ws
+- Swagger (message-service): http://localhost:8083/swagger-ui (Authorize → Bearer JWT)
+- JWT: subject = userId (UUID), role faqat bitta: ADMIN | TEACHER | STUDENT
+
+==========================
+2. Response formatlari
+==========================
+- Auth-service: ResponseDto<T> { success, message, code, errorCode, data }
+- Message-service REST: ResponseDto<T> { success, message, code, errorCode, data }
+- Xatolar (message-service): ResponseDto<null> (code va message bilan), 401/403/400 kabi HTTP statuslar.
+
+==========================
+3. Auth-service API (http://localhost:8081)
+==========================
+Headers: kerak bo‘lganda Authorization: Bearer <token>, X-Device-Id (verify/refresh/logout).
+
+- POST /api/auth/sign-up
+  Body: { firstname, lastname, username, email, password }
+  Natija: ResponseDto<Void>, emailga verification code yuboriladi.
+
+- POST /api/auth/sign-up/verify
+  Headers: X-Device-Id: <device>
+  Body: { identifier: "<email|username>", code: "<emaildan>" }
+  Natija: ResponseDto<AuthTokensResponse> { accessToken, refreshToken, tokenType=Bearer, active=true }
+
+- POST /api/auth/sign-in
+  Body: { identifier, password }
+  Natija: ResponseDto<SignInInitResponse> (kod emailga yuboriladi).
+
+- POST /api/auth/sign-in/verify
+  Headers: X-Device-Id
+  Body: { identifier, code }
+  Natija: ResponseDto<AuthTokensResponse>
+
+- POST /api/auth/refresh
+  Headers: X-Device-Id, Authorization: <refreshToken> (Bearer bo‘lmasa ham xom token)
+  Natija: ResponseDto<AuthTokensResponse>
+
+- POST /api/auth/logout
+  Headers: Authorization: Bearer <accessToken>, X-Device-Id
+  Natija: ResponseDto<Void> (device/token revoke)
+
+- POST /api/auth/forgot-password
+  Body: { identifier }
+  Natija: ResponseDto<Void> (kod yuboriladi)
+
+- POST /api/auth/reset-password
+  Body: { identifier, code, newPassword }
+  Natija: ResponseDto<Void>
+
+Qo‘shimcha: /api/auth/test, /api/auth/to-date-region-time (now/timezone)
+
+DeviceController (/api/auth/devices)
+- GET /api/auth/devices — Headers: Authorization: Bearer <access>, X-Device-Id; javob ResponseDto<List<DeviceResponse>>.
+- POST /api/auth/devices/logout/{deviceId} — boshqa device’ni logout qilish (Authorization + current device jti).
+- POST /api/auth/devices/logout-all — barcha device’larni logout qilish.
+
+UserController (/api/users)
+- GET /api/users/me — ResponseDto<MeResponse>.
+- POST /api/users/change-username — Body: ChangeUsernameRequest.
+- POST /api/users/change-email — Body: ChangeEmailRequest.
+- POST /api/users/heartbeat — faollik belgilash.
+- POST /api/users/update-profile — Body: UpdateProfileRequest.
+- POST /api/users/profile-image — multipart file upload.
+- GET /api/users/exists?userid=<UUID> — Boolean (hidden).
+- POST /api/users/change-password — Headers: X-Device-Id, Body: ChangePasswordRequest, javob ResponseDto<AuthTokensResponse>.
+- POST /api/users/has-profile-image — Boolean (avatar mavjudligi).
+
+==========================
+4. Message-service REST (http://localhost:8083)
+==========================
+Umumiy header: Authorization: Bearer <accessToken> (JWT subject = userId).
+
+- POST /api/chats/send
+  Body:
+  {
+    "receiverId": "UUID",
+    "content": "string"
+  }
+  Javob: ResponseDto<MessageResponse> {
+    messageId, chatId, senderId, receiverId, content, createdAt, read
+  }
+  Xatolar: 400 (receiver/content xato yoki auth-service exists=false yoki ulanmagan), 401 (token yo‘q/xato), 403 (o‘zingizga xabar).
+
+- GET /api/chats
+  Javob: ResponseDto<List<ChatResponse>> {
+    chatId, user1Id, user2Id, createdAt, lastMessageAt
+  }
+
+- GET /api/chats/{chatId}/messages
+  Javob: ResponseDto<List<MessageResponse>> (createdAt asc)
+  Xatolar: 403 (chat ishtirokchisi emas), 404 (chat topilmadi)
+
+- POST /api/push/subscribe
+  Body: PushSubscriptionRequest {
+    endpoint: string,
+    keys: { p256dh: string, auth: string }
+  }
+  Javob: ResponseDto<Void>; subscription JWT subject bo‘yicha saqlanadi.
+
+==========================
+5. Message-service WebSocket/STOMP (ws://localhost:8083/ws)
+==========================
+- CONNECT: nativeHeaders.Authorization = Bearer <accessToken> (majburiy).
+
+Xabar yuborish:
+- Send: destination `/app/send`, body { receiverId, content }
+- Receive (subscribe):
+  * `/user/queue/messages` — asosiy, payload MessageResponse
+  * `/topic/users/{userId}/messages` — fallback topic
+
+Typing indikator:
+- Send: `/app/typing`, body { receiverId, typing: true|false }
+- Receive (subscribe): `/user/queue/typing`, fallback `/topic/users/{userId}/typing`
+- Payload: TypingResponse { senderId, typing }
+
+Notifikatsiya (STOMP, tab ochiq holatda):
+- Subscribe: `/user/queue/notifications`, fallback `/topic/users/{userId}/notifications`
+- Payload: NotificationResponse { type="NEW_MESSAGE", messageId, chatId, senderId, receiverId, content, createdAt }
+
+==========================
+6. Web Push (Chrome yopiq holatida ham notification)
+==========================
+VAPID kalitlari (env):
+- WEBPUSH_VAPID_PUBLIC_KEY=BKmqVFVyTf3NaLw3MCySGgL5Gmhywaai8NwBL9MyjZkDR9ycwF0ucx28aY94sUk4NcQLJQ6KUq6iHALUK4U
+- WEBPUSH_VAPID_PRIVATE_KEY=GmMQSi8SqQRNQ2oSz6osXu0OCycSi-VBHYXf0GIdMMs
+- WEBPUSH_VAPID_SUBJECT=http://localhost (yoki mailto:you@example.com)
+
+Frontend .env:
+- VITE_VAPID_PUBLIC_KEY=BKmqVFVyTf3NaLw3MCySGgL5Gmhywaai8NwBL9MyjZkDR9ycwF0ucx28aY94sUk4NcQLJQ6KUq6iHALUK4U
+
+Subscribe ketma-ketligi (front):
+1) SW registratsiya: navigator.serviceWorker.register('/sw.js')
+2) pushManager.subscribe:
+   const registration = await navigator.serviceWorker.ready;
+   const subscription = await registration.pushManager.subscribe({
+     userVisibleOnly: true,
+     applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
+   });
+3) Backendga yuborish:
+   POST http://localhost:8083/api/push/subscribe
+   Headers: Authorization: Bearer <accessToken>, Content-Type: application/json
+   Body: { "userId": "<JWT subject>", "subscription": { ... } }
+
+sw.js (push listener) namunasi:
+  self.addEventListener('push', e => {
+    const data = e.data?.json() || {};
+    e.waitUntil(self.registration.showNotification(data.title || 'New message', {
+      body: data.body,
+      data: { chatId: data.chatId, senderId: data.senderId }
+    }));
+  });
+  self.addEventListener('notificationclick', e => {
+    e.notification.close();
+    e.waitUntil(clients.openWindow('/chat/' + (e.notification.data?.chatId || '')));
+  });
+
+Backend oqimi:
+- POST /api/push/subscribe subscriptionni userId bo‘yicha saqlaydi (Mongo collection: push_subscriptions, endpoint unique).
+- MessageService sendNewMessageNotification → WebPushService saqlangan subscriptionlarga push yuboradi, ishlamagan subscriptionni o‘chiradi.
+
+==========================
+7. DTO va payloadlar (asosiylari)
+==========================
+- MessageResponse: { messageId, chatId, senderId, receiverId, content, createdAt, read }
+- ChatResponse: { chatId, user1Id, user2Id, createdAt, lastMessageAt }
+- NotificationResponse: { type="NEW_MESSAGE", messageId, chatId, senderId, receiverId, content, createdAt }
+- TypingResponse: { senderId, typing }
+- PushSubscriptionRequest: { endpoint, keys { p256dh, auth } }
+- SendMessageRequest: { receiverId, content }
+- TypingRequest: { receiverId, typing }
+
+==========================
+8. Integratsiya tavsiyalari (front)
+==========================
+- REST uchun har doim Authorization: Bearer <accessToken>.
+- STOMP CONNECT’da Authorization yubormasangiz subscribe/send ishlamaydi.
+- Fallback topiclarni subscribe qilib qo‘ying (`/topic/users/{userId}/...`) — user destination ishlamasa ham push keladi.
+- Web Push: VAPID env to‘ldiring, subscriptionni `/api/push/subscribe` ga yuboring; SW push listenerni sozlang.
+- Typing indikator: `/app/typing` yuboring, `/user/queue/typing` dan oling; typing=true -> “Yozmoqda…” ko‘rsating, typing=false -> o‘chiring.
+
+==========================
+9. Ishlab chiqarish uchun eslatmalar
+==========================
+- JWT secret va VAPID private keyni faqat backendda saqlang.
+- CORS va HTTPS: prod’da HTTPS va haqiqiy domen/VAPID subject (mailto yoki https) ishlating.
+- Mongo/Postgres URL’larini prod konfiguratsiyada alohida set qiling.
+- Log’da VAPID kalitlari xato bo‘lsa WebPush disable bo‘ladi, xabarlar STOMP orqali yetadi.

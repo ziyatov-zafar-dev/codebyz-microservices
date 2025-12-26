@@ -2,7 +2,7 @@ package uz.codebyz.auth.guard;
 
 import jakarta.persistence.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -22,19 +22,19 @@ public class UserLoginGuard {
     private int failCount;
 
     @Column(nullable = false)
-    private Instant blockedUntil;
+    private LocalDateTime blockedUntil;
 
     @Column(nullable = false)
-    private Instant updatedAt;
+    private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
-        if (updatedAt == null) updatedAt = Instant.now();
-        if (blockedUntil == null) blockedUntil = Instant.EPOCH;
+        if (updatedAt == null) updatedAt = LocalDateTime.now();
+        if (blockedUntil == null) blockedUntil = LocalDateTime.MIN;
     }
 
     @PreUpdate
-    public void preUpdate() { updatedAt = Instant.now(); }
+    public void preUpdate() { updatedAt = LocalDateTime.now(); }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -42,8 +42,8 @@ public class UserLoginGuard {
     public void setUserId(UUID userId) { this.userId = userId; }
     public int getFailCount() { return failCount; }
     public void setFailCount(int failCount) { this.failCount = failCount; }
-    public Instant getBlockedUntil() { return blockedUntil; }
-    public void setBlockedUntil(Instant blockedUntil) { this.blockedUntil = blockedUntil; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getBlockedUntil() { return blockedUntil; }
+    public void setBlockedUntil(LocalDateTime blockedUntil) { this.blockedUntil = blockedUntil; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

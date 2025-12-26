@@ -1,0 +1,15 @@
+Realtime ko‘rinish (refreshsiz) prompt
+- STOMP subscribe: qarshi taraf ham /user/queue/messages (fallback /topic/users/{userId}/messages) ga obuna bo‘lsin; obuna ochilgach UI state ni live xabar bilan yangilasin.
+- SEND: /app/send {receiverId, content} — server convertAndSendToUser receiverga push qiladi, shuning uchun subscription callbackda kelgan MessageResponse ni darhol chat messages state ga qo‘shing.
+- Filtrlash: callbackda agar message.chatId aktiv chat bo‘lsa, messages listga push + scroll bottom; aktiv emas bo‘lsa chat listda unread badge ++ va chatni yuqoriga ko‘tarish.
+- No-refresh sinxron: onConnectdan keyin eski tarixni REST bilan yuklab oling, keyin har bir kelgan WS xabarini local state/React Query cache ga qo‘shing (invalidate emas, update) shunda UI live yangilanadi.
+- Guard: payload.body bo‘sh bo‘lsa return; JSON.parse try/catch; setState chaqirishdan oldin current listni [] default qiling.
+Kengaytirilgan xabar turlari
+- Xabar tiplarini qo‘llang: text, image, video, audio, voice, file, system. Payloadga type maydoni qo‘shing.
+- Reply qo‘llab-quvvatlash: replyMessageId maydoni (UUID) yuboring; frontenda quoted ko‘rinishda ko‘rsating.
+- System xabarlar: type:"system" bilan yuboring (misol: chat yaratilishi, foydalanuvchi ulanib/chiqishi); UI’da alohida rang/stil.
+- Attachmentlar: /app/send yoki POST /api/chats/send paytida attachment metadata yuboring {url, filename, size, mimeType, duration?}. File yuklashni alohida endpoint orqali qilasiz.
+- Saqlash yo‘li: fayllarni /uploads/year/month/day/hour:minute:second:/filename ko‘rinishida saqlang va shu URL ni xabarga qo‘shing.
+- UI: fayl/image/video/audio/voice oynatish/preview; unknown MIME uchun download link.
+- Guard: attachment bo‘lsa content bo‘sh bo‘lishi mumkin; lekin type va url majburiy. JSON.parse try/catch saqlang.
+- Kommentariylar: kod yozayotganda har murakkab blokka qisqa izoh (comment) qo‘shing.

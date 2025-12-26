@@ -15,7 +15,8 @@ import uz.codebyz.auth.session.RefreshTokenRepository;
 import uz.codebyz.auth.session.RevokedAccessToken;
 import uz.codebyz.auth.session.RevokedAccessTokenRepository;
 
-import java.time.Instant;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,15 +27,18 @@ public class DeviceService {
     private final RefreshTokenRepository refreshRepo;
     private final RevokedAccessTokenRepository revokedAccessTokenRepository;
     private final IpWhoIsClient ipWhoIsClient;
+    private final Clock clock;
 
     public DeviceService(UserDeviceRepository deviceRepo,
                          RefreshTokenRepository refreshRepo,
                          RevokedAccessTokenRepository revokedAccessTokenRepository,
-                         IpWhoIsClient ipWhoIsClient) {
+                         IpWhoIsClient ipWhoIsClient,
+                         Clock clock) {
         this.deviceRepo = deviceRepo;
         this.refreshRepo = refreshRepo;
         this.revokedAccessTokenRepository = revokedAccessTokenRepository;
         this.ipWhoIsClient = ipWhoIsClient;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -106,14 +110,14 @@ public class DeviceService {
         rat.setJti(accessTokenJti);
         rat.setUserId(userId);
         rat.setDeviceId(deviceId);
-        rat.setRevokedAt(Instant.now());
+        rat.setRevokedAt(LocalDateTime.now(clock));
         revokedAccessTokenRepository.save(rat);
 
         // 3️⃣ Device’ni deactivate qilamiz
         deviceRepo.findByUserIdAndDeviceId(userId, deviceId)
                 .ifPresent(d -> {
                     d.setActive(false);
-                    d.setLastLoginAt(Instant.now()); // yoki lastLogoutAt
+                    d.setLastLoginAt(LocalDateTime.now(clock)); // yoki lastLogoutAt
                     deviceRepo.save(d);
                 });
 
@@ -135,7 +139,7 @@ public class DeviceService {
         List<UserDevice> devices = deviceRepo.findActiveByUserId(userId);
         for (UserDevice d : devices) {
             d.setActive(false);
-            d.setLastLoginAt(Instant.now());
+            d.setLastLoginAt(LocalDateTime.now(clock));
             try {
                 d = deviceRepo.save(d);
             } catch (Exception e) {

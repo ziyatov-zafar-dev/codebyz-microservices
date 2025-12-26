@@ -28,7 +28,8 @@ import uz.codebyz.ads.storage.FileStorageService;
 import uz.codebyz.ads.service.AdService;
 import uz.codebyz.ads.service.AuthUserClient;
 
-import java.time.Instant;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -48,15 +49,18 @@ public class AdApiController {
     private final AuthUserClient authUserClient;
     private final FileStorageService fileStorageService;
     private final String publicUrl;
+    private final Clock clock;
 
     public AdApiController(AdService adService,
                            AuthUserClient authUserClient,
                            FileStorageService fileStorageService,
-                           @org.springframework.beans.factory.annotation.Value("${storage.ad.public-url:/files}") String publicUrl) {
+                           @org.springframework.beans.factory.annotation.Value("${storage.ad.public-url:/files}") String publicUrl,
+                           Clock clock) {
         this.adService = adService;
         this.authUserClient = authUserClient;
         this.fileStorageService = fileStorageService;
         this.publicUrl = publicUrl;
+        this.clock = clock;
     }
 
     // ------------- Public ko'rinish -------------
@@ -81,7 +85,7 @@ public class AdApiController {
                                                              @AuthenticationPrincipal JwtUser principal) {
         String role = principal != null ? principal.getRole() : null;
         return adService.find(id)
-                .filter(ad -> ad.isActiveNow(Instant.now()) && ad.canShowForRole(role))
+                .filter(ad -> ad.isActiveNow(LocalDateTime.now(clock)) && ad.canShowForRole(role))
                 .map(ad -> ResponseEntity.ok(ResponseDto.ok("ok", AdResponse.from(ad))))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ResponseDto.<AdResponse>fail(404, ErrorCode.NOT_FOUND, "Reklama topilmadi")));
@@ -282,7 +286,7 @@ public class AdApiController {
                                                     @AuthenticationPrincipal JwtUser principal) {
         UUID userId = principal != null ? principal.getUserId() : null;
         var adOpt = adService.find(id);
-        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(Instant.now())) {
+        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(LocalDateTime.now(clock))) {
             return ResponseEntity.status(404).body(ResponseDto.<Object>fail(404, ErrorCode.NOT_FOUND, "Reklama topilmadi yoki faol emas"));
         }
         boolean counted = adService.recordView(id, userId);
@@ -296,7 +300,7 @@ public class AdApiController {
                                                      @AuthenticationPrincipal JwtUser principal) {
         UUID userId = principal != null ? principal.getUserId() : null;
         var adOpt = adService.find(id);
-        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(Instant.now())) {
+        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(LocalDateTime.now(clock))) {
             return ResponseEntity.status(404).body(ResponseDto.<Object>fail(404, ErrorCode.NOT_FOUND, "Reklama topilmadi yoki faol emas"));
         }
         boolean counted = adService.recordClick(id, userId);
@@ -412,10 +416,10 @@ public class AdApiController {
             @Schema(description = "Status (DRAFT/ACTIVE/INACTIVE/EXPIRED)") AdStatus status,
             @ArraySchema(schema = @Schema(implementation = AdAudienceRole.class, description = "Ko'rish mumkin bo'lgan rollar")) Set<AdAudienceRole> audienceRoles,
             @Schema(description = "Prioritet (katta bo'lsa oldin)") int priority,
-            @Schema(description = "Boshlanish vaqti (ixtiyoriy)") Instant startAt,
-            @Schema(description = "Tugash vaqti (ixtiyoriy)") Instant endAt,
-            @Schema(description = "Yaratilgan vaqti") Instant createdAt,
-            @Schema(description = "Yangilangan vaqti") Instant updatedAt,
+            @Schema(description = "Boshlanish vaqti (ixtiyoriy)") LocalDateTime startAt,
+            @Schema(description = "Tugash vaqti (ixtiyoriy)") LocalDateTime endAt,
+            @Schema(description = "Yaratilgan vaqti") LocalDateTime createdAt,
+            @Schema(description = "Yangilangan vaqti") LocalDateTime updatedAt,
             @Schema(description = "Kim tomonidan oxirgi yangilangan (UUID)") UUID lastUpdatedBy) {
         public static AdResponse from(Ad ad) {
             return new AdResponse(
@@ -478,9 +482,9 @@ public class AdApiController {
         @NotBlank
         public String position;
         @Schema(description = "Boshlanish vaqti (ixtiyoriy)")
-        public Instant startAt;
+        public LocalDateTime startAt;
         @Schema(description = "Tugash vaqti (ixtiyoriy)")
-        public Instant endAt;
+        public LocalDateTime endAt;
         @Schema(description = "Status (ixtiyoriy, default DRAFT)")
         public AdStatus status;
         @Schema(description = "Prioritet (ixtiyoriy, 0-1000)")
@@ -516,9 +520,9 @@ public class AdApiController {
         @Schema(description = "Pozitsiya/slot (ixtiyoriy)")
         public String position;
         @Schema(description = "Boshlanish vaqti (ixtiyoriy)")
-        public Instant startAt;
+        public LocalDateTime startAt;
         @Schema(description = "Tugash vaqti (ixtiyoriy)")
-        public Instant endAt;
+        public LocalDateTime endAt;
         @Schema(description = "Prioritet (ixtiyoriy, 0-1000)")
         @Min(0)
         @Max(1000)

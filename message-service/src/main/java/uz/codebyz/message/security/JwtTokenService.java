@@ -1,42 +1,63 @@
 package uz.codebyz.message.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Service
+@Component
 public class JwtTokenService {
 
-    private final Key key;
+    private final SecretKey secretKey;
 
     public JwtTokenService(@Value("${jwt.secret}") String secret) {
-        if (secret == null || secret.length() < 32) {
-            throw new IllegalStateException("jwt.secret must be at least 32 characters");
-        }
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public JwtUser parse(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
+    public Authentication parse(String token) {
+        Jws<Claims> claimsJws = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseClaimsJws(token);
+
+        Claims claims = claimsJws.getBody();
         UUID userId = UUID.fromString(claims.getSubject());
-        Object rolesClaim = claims.get("roles");
-        String role;
-        if (rolesClaim instanceof List<?> list && !list.isEmpty()) {
-            role = list.get(0).toString();
-        } else {
-            role = claims.get("role", String.class);
-        }
-        return new JwtUser(userId, role);
+        String role = extractRole(claims);
+        List<String> roles = List.of(role);
+        JwtUser principal = new JwtUser(userId, roles);
+        return new UsernamePasswordAuthenticationToken(principal, null,
+                roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
     }
+
+    private String extractRole(Claims claims) {
+        Object rolesObj = claims.get("roles");
+        String rawRole = null;
+        if (rolesObj instanceof List<?> list && !list.isEmpty()) {
+            rawRole = String.valueOf(list.get(0));
+        } else if (rolesObj instanceof String str && !str.isBlank()) {
+            rawRole = str;
+        }
+        if (rawRole == null || rawRole.isBlank()) {
+            throw new IllegalArgumentException("Role topilmadi");
+        }
+        String roleUpper = rawRole.trim().toUpperCase();
+        if (!ALLOWED_ROLES.contains(roleUpper)) {
+            throw new IllegalArgumentException("Noto'g'ri role: " + roleUpper);
+        }
+        return roleUpper;
+    }
+
+    private static final Set<String> ALLOWED_ROLES = Set.of("ADMIN", "TEACHER", "STUDENT");
 }

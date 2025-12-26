@@ -15,7 +15,8 @@ import uz.codebyz.ads.domain.AdStatus;
 import uz.codebyz.ads.domain.AdType;
 import uz.codebyz.ads.repository.AdRepository;
 
-import java.time.Instant;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,11 +32,14 @@ public class AdService {
     private static final long CLICK_COOLDOWN_SECONDS = 15;
 
     private final AdRepository repository;
-    private final Map<String, Instant> viewThrottles = new ConcurrentHashMap<>();
-    private final Map<String, Instant> clickThrottles = new ConcurrentHashMap<>();
+    private final Clock clock;
+    private final Map<String, LocalDateTime> viewThrottles = new ConcurrentHashMap<>();
+    private final Map<String, LocalDateTime> clickThrottles = new ConcurrentHashMap<>();
 
-    public AdService(AdRepository repository) {
+    public AdService(AdRepository repository,
+                     Clock clock) {
         this.repository = repository;
+        this.clock = clock;
     }
 
     public Ad create(UUID ownerId,
@@ -48,13 +52,13 @@ public class AdService {
                      String page,
                      String section,
                      String position,
-                     Instant startAt,
-                     Instant endAt,
+                     LocalDateTime startAt,
+                     LocalDateTime endAt,
                      AdStatus status,
                      int priority,
                      Set<AdAudienceRole> audienceRoles) {
         UUID id = UUID.randomUUID();
-        Instant now = Instant.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         Ad ad = new Ad(id, ownerId, title, description, mediaUrl, mediaPath, targetUrl, type, page, section, position,
                 startAt, endAt, status, priority, audienceRoles, now);
         ad.setLastUpdatedBy(ownerId);
@@ -75,8 +79,8 @@ public class AdService {
                                String page,
                                String section,
                                String position,
-                               Instant startAt,
-                               Instant endAt,
+                               LocalDateTime startAt,
+                               LocalDateTime endAt,
                                Integer priority,
                                Set<AdAudienceRole> audienceRoles) {
         return find(adId).filter(ad -> canEdit(ad, requesterId, admin)).map(ad -> {
@@ -93,7 +97,7 @@ public class AdService {
             if (endAt != null) ad.setEndAt(endAt);
             if (priority != null) ad.setPriority(priority);
             if (audienceRoles != null && !audienceRoles.isEmpty()) ad.setAudienceRoles(audienceRoles);
-            ad.setUpdatedAt(Instant.now());
+            ad.setUpdatedAt(LocalDateTime.now(clock));
             ad.setLastUpdatedBy(requesterId);
             repository.save(ad);
             log.info("Ad updated id={} by={}", adId, requesterId);
@@ -105,7 +109,7 @@ public class AdService {
         return find(adId).filter(ad -> canEdit(ad, requesterId, admin)).map(ad -> {
             ad.setMediaPath(mediaPath);
             ad.setMediaUrl(mediaUrl);
-            ad.setUpdatedAt(Instant.now());
+            ad.setUpdatedAt(LocalDateTime.now(clock));
             ad.setLastUpdatedBy(requesterId);
             repository.save(ad);
             return ad;
@@ -116,7 +120,7 @@ public class AdService {
         return find(adId).filter(ad -> canEdit(ad, requesterId, admin)).map(ad -> {
             ad.setMediaPath(null);
             ad.setMediaUrl(null);
-            ad.setUpdatedAt(Instant.now());
+            ad.setUpdatedAt(LocalDateTime.now(clock));
             ad.setLastUpdatedBy(requesterId);
             repository.save(ad);
             return ad;
@@ -126,7 +130,7 @@ public class AdService {
     public Optional<Ad> changeStatus(UUID adId, UUID requesterId, boolean admin, AdStatus status) {
         return find(adId).filter(ad -> canEdit(ad, requesterId, admin)).map(ad -> {
             ad.setStatus(status);
-            ad.setUpdatedAt(Instant.now());
+            ad.setUpdatedAt(LocalDateTime.now(clock));
             ad.setLastUpdatedBy(requesterId);
             repository.save(ad);
             log.info("Ad status changed id={} status={} by={}", adId, status, requesterId);
@@ -140,7 +144,7 @@ public class AdService {
                 .map(ad -> {
                     ad.setDeleted(true);
                     ad.setStatus(AdStatus.INACTIVE);
-                    ad.setUpdatedAt(Instant.now());
+                    ad.setUpdatedAt(LocalDateTime.now(clock));
                     ad.setLastUpdatedBy(requesterId);
                     repository.save(ad);
                     log.info("Ad soft-deleted id={} by={}", adId, requesterId);
@@ -171,7 +175,7 @@ public class AdService {
 
     public List<Ad> listForAudience(String role, String pageKey, String section, String position, AdType type, int limit) {
         expireOverdue();
-        Instant now = Instant.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         Pageable pageable = PageRequest.of(0, limit > 0 ? limit : 50, Sort.by(
                 Sort.Order.desc("priority"),
                 Sort.Order.asc("startAt"),
@@ -189,7 +193,7 @@ public class AdService {
 
     public boolean recordView(UUID adId, UUID userId) {
         Optional<Ad> adOpt = find(adId);
-        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(Instant.now())) return false;
+        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(LocalDateTime.now(clock))) return false;
         String key = buildThrottleKey("view", adId, userId);
         if (isThrottled(viewThrottles, key, VIEW_COOLDOWN_SECONDS)) return false;
         Ad ad = adOpt.get();
@@ -200,7 +204,7 @@ public class AdService {
 
     public boolean recordClick(UUID adId, UUID userId) {
         Optional<Ad> adOpt = find(adId);
-        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(Instant.now())) return false;
+        if (adOpt.isEmpty() || !adOpt.get().isActiveNow(LocalDateTime.now(clock))) return false;
         String key = buildThrottleKey("click", adId, userId);
         if (isThrottled(clickThrottles, key, CLICK_COOLDOWN_SECONDS)) return false;
         Ad ad = adOpt.get();
@@ -210,7 +214,7 @@ public class AdService {
     }
 
     private void expireOverdue() {
-        Instant now = Instant.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         List<Ad> overdue = repository.findByDeletedFalseAndEndAtNotNullAndEndAtLessThanEqualAndStatusNot(now, AdStatus.EXPIRED);
         overdue.forEach(ad -> {
             ad.setStatus(AdStatus.EXPIRED);
@@ -248,7 +252,7 @@ public class AdService {
         return (root, query, cb) -> cb.equal(root.get(field), value);
     }
 
-    private Specification<Ad> activeNow(Instant now) {
+    private Specification<Ad> activeNow(LocalDateTime now) {
         return (root, query, cb) -> cb.and(
                 cb.equal(root.get("status"), AdStatus.ACTIVE),
                 cb.or(cb.isNull(root.get("startAt")), cb.lessThanOrEqualTo(root.get("startAt"), now)),
@@ -281,9 +285,9 @@ public class AdService {
         return type + ":" + adId + ":" + (userId == null ? "anon" : userId);
     }
 
-    private boolean isThrottled(Map<String, Instant> map, String key, long cooldownSeconds) {
-        Instant now = Instant.now();
-        Instant last = map.get(key);
+    private boolean isThrottled(Map<String, LocalDateTime> map, String key, long cooldownSeconds) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDateTime last = map.get(key);
         if (last != null && now.minusSeconds(cooldownSeconds).isBefore(last)) {
             return true;
         }

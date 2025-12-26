@@ -20,8 +20,6 @@ import uz.codebyz.auth.device.enums.DeviceType;
 import uz.codebyz.auth.dto.*;
 import uz.codebyz.auth.guard.LoginBlockedException;
 import uz.codebyz.auth.guard.LoginGuardService;
-import uz.codebyz.auth.location.IpWhoIsClient;
-import uz.codebyz.auth.location.IpWhoIsResponse;
 import uz.codebyz.auth.mail.MailService;
 import uz.codebyz.auth.security.JwtTokenService;
 import uz.codebyz.auth.session.RevokedAccessTokenRepository;
@@ -34,7 +32,8 @@ import uz.codebyz.auth.session.RefreshToken;
 import uz.codebyz.auth.session.RefreshTokenRepository;
 
 import java.security.SecureRandom;
-import java.time.Instant;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -55,6 +54,7 @@ public class AuthService {
     private final DeviceService deviceService;
     private final RevokedAccessTokenRepository revokedAccessTokenRepository;
     private final JwtProperties jwtProperties;
+    private final Clock clock;
 
     public AuthService(UserRepository userRepo,
                        PendingRegistrationRepository pendingRepo,
@@ -65,7 +65,11 @@ public class AuthService {
                        JwtTokenService jwtTokenService,
                        LoginGuardService loginGuardService,
                        UserDeviceRepository deviceRepo,
-                       IpWhoIsClient ipWhoIsClient, RefreshTokenRepository refreshRepo, RefreshTokenRepository refreshTokenRepository, DeviceService deviceService, RevokedAccessTokenRepository revokedAccessTokenRepository, JwtProperties jwtProperties) {
+                       RefreshTokenRepository refreshTokenRepository,
+                       DeviceService deviceService,
+                       RevokedAccessTokenRepository revokedAccessTokenRepository,
+                       JwtProperties jwtProperties,
+                       Clock clock) {
         this.userRepo = userRepo;
         this.pendingRepo = pendingRepo;
         this.verificationRepo = verificationRepo;
@@ -79,6 +83,7 @@ public class AuthService {
         this.deviceService = deviceService;
         this.revokedAccessTokenRepository = revokedAccessTokenRepository;
         this.jwtProperties = jwtProperties;
+        this.clock = clock;
     }
 
     @Transactional
@@ -100,7 +105,7 @@ public class AuthService {
         pr.setUsername(username);
         pr.setEmail(email);
         pr.setPasswordHash(passwordEncoder.encode(req.getPassword()));
-        pr.setExpiresAt(Instant.now().plus(verificationProps.getSignUpCodeMinutes(), ChronoUnit.MINUTES));
+        pr.setExpiresAt(LocalDateTime.now(clock).plus(verificationProps.getSignUpCodeMinutes(), ChronoUnit.MINUTES));
         pendingRepo.save(pr);
 
         String code = genCode();
@@ -124,7 +129,7 @@ public class AuthService {
         if (pr == null) {
             return ResponseDto.fail(404, ErrorCode.USER_NOT_FOUND, "Pending user topilmadi");
         }
-        if (pr.getExpiresAt() != null && pr.getExpiresAt().isBefore(Instant.now())) {
+        if (pr.getExpiresAt() != null && pr.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
             return ResponseDto.fail(410, ErrorCode.VERIFICATION_EXPIRED, "Registratsiya muddati tugagan, qayta sign-up qiling");
         }
 
@@ -374,7 +379,9 @@ public class AuthService {
         rt.setDeviceId(deviceId);
         rt.setJti(jti);
         rt.setRevoked(false);
-        rt.setExpiresAt(Instant.now().plus(30, ChronoUnit.DAYS));
+        LocalDateTime now = LocalDateTime.now(clock);
+        rt.setCreatedAt(now);
+        rt.setExpiresAt(now.plus(jwtProperties.getRefreshTokenDays(), ChronoUnit.DAYS));
         refreshTokenRepository.save(rt);
     }
 
@@ -393,7 +400,7 @@ public class AuthService {
 
         existing.setIp(ip);
         existing.setUserAgent(userAgent);
-        existing.setLastLoginAt(Instant.now());
+        existing.setLastLoginAt(LocalDateTime.now(clock));
         existing.setActive(true);
         String browserName = UserAgentUtil.getBrowserName(userAgent);
         String browserVersion = UserAgentUtil.getBrowserVersion(userAgent);
@@ -421,7 +428,7 @@ public class AuthService {
         ev.setPurpose(purpose);
         ev.setCode(code);
         ev.setUsed(false);
-        ev.setExpiresAt(Instant.now().plus(minutes, ChronoUnit.MINUTES));
+        ev.setExpiresAt(LocalDateTime.now(clock).plus(minutes, ChronoUnit.MINUTES));
 
         verificationRepo.save(ev);
     }
@@ -432,7 +439,7 @@ public class AuthService {
         EmailVerification ev = verificationRepo.findLatest(email, purpose).orElse(null);
         if (ev == null) return VerifyResult.fail(404, ErrorCode.VERIFICATION_NOT_FOUND, "Kod topilmadi");
         if (ev.isUsed()) return VerifyResult.fail(409, ErrorCode.VERIFICATION_USED, "Kod ishlatilgan");
-        if (ev.getExpiresAt() != null && ev.getExpiresAt().isBefore(Instant.now()))
+        if (ev.getExpiresAt() != null && ev.getExpiresAt().isBefore(LocalDateTime.now(clock)))
             return VerifyResult.fail(410, ErrorCode.VERIFICATION_EXPIRED, "Kod muddati tugagan");
         if (!ev.getCode().equals(code))
             return VerifyResult.fail(400, ErrorCode.VERIFICATION_INVALID, "Kod noto'g'ri");
@@ -544,7 +551,7 @@ public class AuthService {
         ev.setCode(code);
         ev.setUsed(false);
         ev.setExpiresAt(
-                Instant.now().plus(minutes, ChronoUnit.MINUTES)
+                LocalDateTime.now(clock).plus(minutes, ChronoUnit.MINUTES)
         );
         verificationRepo.save(ev);
 
@@ -596,7 +603,7 @@ public class AuthService {
             return ResponseDto.fail(401, ErrorCode.INVALID_TOKEN, "Refresh token revoked");
         }
 
-        if (rt.getExpiresAt().isBefore(Instant.now())) {
+        if (rt.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
             return ResponseDto.fail(401, ErrorCode.TOKEN_EXPIRED, "Refresh token expired");
         }
 
@@ -620,7 +627,7 @@ public class AuthService {
         newRt.setJti(newJti);
         newRt.setRevoked(false);
         newRt.setExpiresAt(
-                Instant.now().plus(jwtProperties.getRefreshTokenDays(), ChronoUnit.DAYS)
+                LocalDateTime.now(clock).plus(jwtProperties.getRefreshTokenDays(), ChronoUnit.DAYS)
         );
         refreshTokenRepository.save(newRt);
 

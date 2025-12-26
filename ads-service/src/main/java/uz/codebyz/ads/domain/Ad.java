@@ -10,7 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
@@ -52,8 +52,8 @@ public class Ad {
     @Column(nullable = false)
     private String position;
 
-    private Instant startAt;
-    private Instant endAt;
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
@@ -78,10 +78,10 @@ public class Ad {
     private long clickCount = 0;
 
     @Column(nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    private Instant updatedAt;
+    private LocalDateTime updatedAt;
 
     private UUID lastUpdatedBy;
 
@@ -99,12 +99,12 @@ public class Ad {
               String page,
               String section,
               String position,
-              Instant startAt,
-              Instant endAt,
+              LocalDateTime startAt,
+              LocalDateTime endAt,
               AdStatus status,
               int priority,
               Set<AdAudienceRole> audienceRoles,
-              Instant createdAt) {
+              LocalDateTime createdAt) {
         this.id = id;
         this.ownerId = ownerId;
         this.title = title;
@@ -215,19 +215,19 @@ public class Ad {
         this.position = position;
     }
 
-    public Instant getStartAt() {
+    public LocalDateTime getStartAt() {
         return startAt;
     }
 
-    public void setStartAt(Instant startAt) {
+    public void setStartAt(LocalDateTime startAt) {
         this.startAt = startAt;
     }
 
-    public Instant getEndAt() {
+    public LocalDateTime getEndAt() {
         return endAt;
     }
 
-    public void setEndAt(Instant endAt) {
+    public void setEndAt(LocalDateTime endAt) {
         this.endAt = endAt;
     }
 
@@ -280,19 +280,19 @@ public class Ad {
         this.clickCount = clickCount;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public Instant getUpdatedAt() {
+    public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Instant updatedAt) {
+    public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -308,7 +308,7 @@ public class Ad {
         return audienceRoles.stream().anyMatch(r -> AdAudienceRole.matches(r, role));
     }
 
-    public boolean isActiveNow(Instant now) {
+    public boolean isActiveNow(LocalDateTime now) {
         boolean timeOk = (startAt == null || !now.isBefore(startAt)) &&
                 (endAt == null || now.isBefore(endAt));
         return status == AdStatus.ACTIVE && timeOk && !deleted;

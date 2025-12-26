@@ -3,8 +3,8 @@ package uz.codebyz.auth.dto;
 import uz.codebyz.auth.user.UserRole;
 import uz.codebyz.auth.user.SocialLinks;
 
-import java.time.Instant;
-import java.time.ZonedDateTime;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class MeResponse {
@@ -23,9 +23,9 @@ public class MeResponse {
     private String avatarSizeMB;
     private String avatarFilePath;
 
-    private Instant birthDate;
+    private LocalDate birthDate;
     private SocialLinks socialLinks;
-    private ZonedDateTime lastOnline;
+    private LocalDateTime lastOnline;
 
     public Boolean getOnline() {
         return online;
@@ -134,11 +134,11 @@ public class MeResponse {
         this.avatarSizeMB = avatarSizeMB;
     }
 
-    public Instant getBirthDate() {
+    public LocalDate getBirthDate() {
         return birthDate;
     }
 
-    public void setBirthDate(Instant birthDate) {
+    public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
     }
 
@@ -154,13 +154,13 @@ public class MeResponse {
         return avatarFilePath;
     }
 
-    private Instant uploadedImgTime;
+    private LocalDateTime uploadedImgTime;
 
-    public Instant getUploadedImgTime() {
+    public LocalDateTime getUploadedImgTime() {
         return uploadedImgTime;
     }
 
-    public void setUploadedImgTime(Instant uploadedImgTime) {
+    public void setUploadedImgTime(LocalDateTime uploadedImgTime) {
         this.uploadedImgTime = uploadedImgTime;
     }
 
@@ -168,11 +168,11 @@ public class MeResponse {
         this.avatarFilePath = avatarFilePath;
     }
 
-    public ZonedDateTime getLastOnline() {
+    public LocalDateTime getLastOnline() {
         return lastOnline;
     }
 
-    public void setLastOnline(ZonedDateTime lastOnline) {
+    public void setLastOnline(LocalDateTime lastOnline) {
         this.lastOnline = lastOnline;
     }
 }

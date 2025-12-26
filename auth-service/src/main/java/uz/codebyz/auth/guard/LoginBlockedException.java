@@ -1,14 +1,14 @@
 package uz.codebyz.auth.guard;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class LoginBlockedException extends RuntimeException {
-    private final Instant blockedUntil;
+    private final LocalDateTime blockedUntil;
 
-    public LoginBlockedException(Instant blockedUntil) {
+    public LoginBlockedException(LocalDateTime blockedUntil) {
         super("Login is blocked until " + blockedUntil);
         this.blockedUntil = blockedUntil;
     }
 
-    public Instant getBlockedUntil() { return blockedUntil; }
+    public LocalDateTime getBlockedUntil() { return blockedUntil; }
 }

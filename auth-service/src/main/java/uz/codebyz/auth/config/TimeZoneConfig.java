@@ -2,11 +2,13 @@ package uz.codebyz.auth.config;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.TimeZone;
+
 @Configuration
 public class TimeZoneConfig {
 
@@ -16,6 +18,16 @@ public class TimeZoneConfig {
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
-        System.out.println("✅ JVM TimeZone set to: " + TimeZone.getDefault().getID());
+        System.out.println("JVM TimeZone set to: " + TimeZone.getDefault().getID());
+    }
+
+    @Bean
+    public ZoneId appZoneId() {
+        return ZoneId.of(timeZone);
+    }
+
+    @Bean
+    public Clock appClock(ZoneId appZoneId) {
+        return Clock.system(appZoneId);
     }
 }

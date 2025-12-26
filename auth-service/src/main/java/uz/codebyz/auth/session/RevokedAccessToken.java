@@ -2,7 +2,7 @@ package uz.codebyz.auth.session;
 
 import jakarta.persistence.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -20,7 +20,7 @@ public class RevokedAccessToken {
     @Column(nullable = false, length = 100)
     private String deviceId;
     @Column(nullable = false)
-    private Instant revokedAt = Instant.now();
+    private LocalDateTime revokedAt = LocalDateTime.now();
 
     public String getJti() {
         return jti;
@@ -38,7 +38,7 @@ public class RevokedAccessToken {
         this.userId = userId;
     }
 
-    public Instant getRevokedAt() {
+    public LocalDateTime getRevokedAt() {
         return revokedAt;
     }
 
@@ -50,7 +50,7 @@ public class RevokedAccessToken {
         this.deviceId = deviceId;
     }
 
-    public void setRevokedAt(Instant revokedAt) {
+    public void setRevokedAt(LocalDateTime revokedAt) {
         this.revokedAt = revokedAt;
     }
 

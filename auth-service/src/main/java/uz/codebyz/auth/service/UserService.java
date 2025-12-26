@@ -19,7 +19,9 @@ import uz.codebyz.auth.user.User;
 import uz.codebyz.auth.user.UserRepository;
 import uz.codebyz.auth.util.FileUtil;
 
-import java.time.*;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -30,16 +32,15 @@ public class UserService {
     private final LoginGuardService loginGuardService;
     private final DeviceService deviceService;
     private final JwtTokenService jwtTokenService;
-    @Value("${app.timezone}")
-    private String timezone;
     private final UserRepository userRepository;
     private final UserDeviceRepository userDeviceRepository;
     @Value("${storage.profile.public-url}")
     private String publicUrl;
     private final UserRepository repo;
     private final FileStorageService storageService;
+    private final Clock clock;
 
-    public UserService(UserRepository repo, FileStorageService storageService, UserRepository userRepository, UserDeviceRepository userDeviceRepository, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository, RevokedAccessTokenRepository revokedAccessTokenRepository, LoginGuardService loginGuardService, DeviceService deviceService, JwtTokenService jwtTokenService) {
+    public UserService(UserRepository repo, FileStorageService storageService, UserRepository userRepository, UserDeviceRepository userDeviceRepository, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository, RevokedAccessTokenRepository revokedAccessTokenRepository, LoginGuardService loginGuardService, DeviceService deviceService, JwtTokenService jwtTokenService, Clock clock) {
         this.repo = repo;
         this.storageService = storageService;
         this.userRepository = userRepository;
@@ -50,6 +51,7 @@ public class UserService {
         this.loginGuardService = loginGuardService;
         this.deviceService = deviceService;
         this.jwtTokenService = jwtTokenService;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -73,12 +75,12 @@ public class UserService {
         r.setAvatarSizeMB(u.getAvatarSizeMB());
         r.setBirthDate(u.getBirthDate());
         r.setLastOnline(u.getLastActivityAt());
-        ZonedDateTime lastActivity = u.getLastActivityAt();
+        LocalDateTime lastActivity = u.getLastActivityAt();
 
         r.setOnline(
                 lastActivity != null &&
                         lastActivity.isAfter(
-                                ZonedDateTime.now(ZoneId.of(timezone)).minusSeconds(125)
+                                LocalDateTime.now(clock).minusSeconds(125)
                         )
         );
 
@@ -142,7 +144,7 @@ public class UserService {
             user.setAvatarSize(file.getSize());
             user.setAvatarSizeMB(FileUtil.toMB(file.getSize()));
             user.setAvatarUrl(getHttpUrl(req) + publicUrl + "/" + stored.relativePath());
-            user.setUploadedImageTime(Instant.now());
+            user.setUploadedImageTime(LocalDateTime.now(clock));
             userRepository.save(user);
             return ResponseDto.ok("Profile image uploaded");
 
@@ -172,9 +174,7 @@ public class UserService {
     public void heartbeat(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setLastActivityAt(ZonedDateTime
-                .now(ZoneId.of(timezone))
-        );
+        user.setLastActivityAt(LocalDateTime.now(clock));
         userRepository.save(user);
         System.out.println(user.getAvatarFilePath());
     }

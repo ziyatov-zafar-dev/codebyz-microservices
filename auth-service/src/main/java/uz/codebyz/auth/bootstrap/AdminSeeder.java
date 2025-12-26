@@ -8,7 +8,7 @@ import uz.codebyz.auth.user.User;
 import uz.codebyz.auth.user.UserRepository;
 import uz.codebyz.auth.user.UserRole;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Component
 public class AdminSeeder implements CommandLineRunner {
@@ -54,8 +54,9 @@ public class AdminSeeder implements CommandLineRunner {
         admin.setEmailVerified(true);
         admin.setActive(true);
         admin.setSocialLinks(links);
-        admin.setCreatedAt(Instant.now());
-        admin.setUpdatedAt(Instant.now());
+        LocalDateTime now = LocalDateTime.now();
+        admin.setCreatedAt(now);
+        admin.setUpdatedAt(now);
 
         userRepository.save(admin);
 

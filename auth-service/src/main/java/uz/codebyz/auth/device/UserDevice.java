@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import uz.codebyz.auth.device.enums.DeviceType;
 import uz.codebyz.auth.location.Timezone;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -37,12 +37,12 @@ public class UserDevice {
 
 
     @Column(nullable = false)
-    private Instant lastLoginAt = Instant.now();
+    private LocalDateTime lastLoginAt = LocalDateTime.now();
 
     @Column(nullable = false)
-    private Instant createdAt = Instant.now();
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public UserDevice(String browserName, DeviceType deviceType, String browserVersion, UUID userId, String deviceId, String userAgent, String ip, boolean active, String deviceName, Instant lastLoginAt, Instant createdAt) {
+    public UserDevice(String browserName, DeviceType deviceType, String browserVersion, UUID userId, String deviceId, String userAgent, String ip, boolean active, String deviceName, LocalDateTime lastLoginAt, LocalDateTime createdAt) {
         this.browserName = browserName;
         this.deviceType = deviceType;
         this.browserVersion = browserVersion;
@@ -62,7 +62,7 @@ public class UserDevice {
 
     @PrePersist
     public void prePersist() {
-        Instant now = Instant.now();
+        LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) createdAt = now;
         if (lastLoginAt == null) lastLoginAt = now;
         active = true;
@@ -125,19 +125,19 @@ public class UserDevice {
         this.deviceName = deviceName;
     }
 
-    public Instant getLastLoginAt() {
+    public LocalDateTime getLastLoginAt() {
         return lastLoginAt;
     }
 
-    public void setLastLoginAt(Instant lastLoginAt) {
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 

@@ -3,7 +3,7 @@ package uz.codebyz.auth.guard;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -15,15 +15,15 @@ public class LoginGuardService {
     public void ensureNotBlocked(UUID userId) {
         UserLoginGuard g = repo.findByUserId(userId).orElse(null);
         if (g == null) return;
-        Instant until = g.getBlockedUntil();
-        if (until != null && until.isAfter(Instant.now())) throw new LoginBlockedException(until);
+        LocalDateTime until = g.getBlockedUntil();
+        if (until != null && until.isAfter(LocalDateTime.now())) throw new LoginBlockedException(until);
     }
 
     public void onSuccess(UUID userId) {
         UserLoginGuard g = repo.findByUserId(userId).orElse(null);
         if (g == null) return;
         g.setFailCount(0);
-        g.setBlockedUntil(Instant.EPOCH);
+        g.setBlockedUntil(LocalDateTime.MIN);
         repo.save(g);
     }
 
@@ -33,7 +33,7 @@ public class LoginGuardService {
             g = new UserLoginGuard();
             g.setUserId(userId);
             g.setFailCount(0);
-            g.setBlockedUntil(Instant.EPOCH);
+            g.setBlockedUntil(LocalDateTime.MIN);
         }
 
         int fail = g.getFailCount() + 1;
@@ -46,10 +46,10 @@ public class LoginGuardService {
         else add = Duration.ZERO;
 
         if (!add.isZero()) {
-            Instant base = Instant.now();
-            Instant cur = g.getBlockedUntil();
+            LocalDateTime base = LocalDateTime.now();
+            LocalDateTime cur = g.getBlockedUntil();
             if (cur != null && cur.isAfter(base)) base = cur;
-            g.setBlockedUntil(base.plus(add));
+            g.setBlockedUntil(base.plusSeconds(add.getSeconds()));
         }
         repo.save(g);
     }

@@ -2,8 +2,8 @@ package uz.codebyz.auth.user;
 
 import jakarta.persistence.*;
 
-import java.time.Instant;
-import java.time.ZonedDateTime;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -32,14 +32,14 @@ public class User {
     private String avatarSizeMB;
     private String avatarFilePath;
 
-    private Instant birthDate;
+    private LocalDate birthDate;
 
     @Embedded
     private SocialLinks socialLinks;
 
     @Column(nullable = false, length = 40)
     private String username;
-    private Instant uploadedImageTime;
+    private LocalDateTime uploadedImageTime;
 
     @Column(nullable = false, length = 120)
     private String email;
@@ -50,19 +50,19 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserRole role;
-    private ZonedDateTime  lastActivityAt;
+    private LocalDateTime  lastActivityAt;
     @Column(nullable = false)
     private boolean emailVerified;
     @Column(nullable = false)
     private boolean active;
     @Column(nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
     @Column(nullable = false)
-    private Instant updatedAt;
+    private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
-        Instant now = Instant.now();
+        LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) createdAt = now;
         if (updatedAt == null) updatedAt = now;
         if (role == null) role = UserRole.STUDENT;
@@ -71,7 +71,7 @@ public class User {
 
     @PreUpdate
     public void preUpdate() {
-        updatedAt = Instant.now();
+        updatedAt = LocalDateTime.now();
     }
 
     public UUID getId() {
@@ -130,11 +130,11 @@ public class User {
         this.avatarSizeMB = avatarSizeMB;
     }
 
-    public Instant getBirthDate() {
+    public LocalDate getBirthDate() {
         return birthDate;
     }
 
-    public void setBirthDate(Instant birthDate) {
+    public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
     }
 
@@ -194,19 +194,19 @@ public class User {
         this.active = active;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public Instant getUpdatedAt() {
+    public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Instant updatedAt) {
+    public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -218,19 +218,19 @@ public class User {
         this.avatarFilePath = avatarFilePath;
     }
 
-    public Instant getUploadedImageTime() {
+    public LocalDateTime getUploadedImageTime() {
         return uploadedImageTime;
     }
 
-    public void setUploadedImageTime(Instant uploadedImageTime) {
+    public void setUploadedImageTime(LocalDateTime uploadedImageTime) {
         this.uploadedImageTime = uploadedImageTime;
     }
 
-    public ZonedDateTime  getLastActivityAt() {
+    public LocalDateTime getLastActivityAt() {
         return lastActivityAt;
     }
 
-    public void setLastActivityAt(ZonedDateTime lastActive) {
+    public void setLastActivityAt(LocalDateTime lastActive) {
         this.lastActivityAt = lastActive;
     }
 

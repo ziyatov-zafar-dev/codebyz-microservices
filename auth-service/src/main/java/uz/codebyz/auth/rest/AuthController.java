@@ -10,7 +10,7 @@ import uz.codebyz.auth.security.JwtUser;
 import uz.codebyz.auth.service.AuthService;
 import uz.codebyz.auth.service.DeviceService;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -100,13 +100,10 @@ public class AuthController {
 
     @PostMapping("/to-date-region-time")
     public LocalDateTime toCurrentDate(
-            @RequestParam("now") Instant now,
+            @RequestParam("now") LocalDateTime now,
             @RequestParam("timezone") String timezone
     ) {
-        return LocalDateTime.ofInstant(
-                now,
-                ZoneId.of(timezone)
-        );
+        return now.atZone(ZoneId.of(timezone)).toLocalDateTime();
     }
 
 }

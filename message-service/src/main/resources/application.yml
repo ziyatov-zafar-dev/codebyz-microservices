@@ -2,40 +2,78 @@ server:
   port: 8083
 
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+  application:
+    name: message-service
+
+  # =========================
+  # PostgreSQL (LOCAL)
+  # =========================
   datasource:
     url: jdbc:postgresql://localhost:5432/codebyz_message
     username: postgres
     password: 122333
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # =========================
+  # MongoDB (RAILWAY)
+  # =========================
   data:
     mongodb:
-      uri: mongodb+srv://ziyatovzafar98_db_user:KwCTDphxwMkXB8QX@cluster0.exxw2t9.mongodb.net/codebyz_message?retryWrites=true&w=majority/codebyz_message
+      uri: mongodb://localhost:27017/codebyz_message
 
+# =========================
+# WEB PUSH (VAPID)
+# =========================
+webpush:
+  vapid:
+    public-key: BKmqVFVyTf3NaLw3MCySGgL5Gmhywaai8NwBL9MyjZkDR9ycwF0ucx28aY94sUk4NcQLJQ6KUq6iHALUK4U
+    private-key: GmMQSi8SqQRNQ2oSz6osXu0OCycSi-VBHYXf0GIdMMs
+    subject: http://localhost:5500
+  jackson:
+    time-zone: Europe/Istanbul
+    serialization:
+      write-dates-as-timestamps: false
+
+# =========================
+# FILE STORAGE
+# =========================
 storage:
   uploads-dir: uploads
   profile:
     dir: message
     public-url: /odnlicasjocdiahduhjcoinaurofrejdhiudosjkhfddddddddddddddddddddiopasdijkhieodfjhsiui0eodjifhureodihuosfdjfiles
 
+# =========================
+# AUTH SERVICE
+# =========================
 auth:
   base-url: http://localhost:8081
 
+# =========================
+# APPLICATION
+# =========================
 app:
   timezone: Europe/Istanbul
 
+# =========================
+# JWT
+# =========================
 jwt:
   secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
   access-token-minutes: 60
   refresh-token-days: 30
 
+# =========================
+# SWAGGER
+# =========================
 springdoc:
   swagger-ui:
     path: /swagger-ui

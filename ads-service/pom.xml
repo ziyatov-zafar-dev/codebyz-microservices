@@ -10,7 +10,7 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>ads</artifactId>
+    <artifactId>ads-service</artifactId>
     <name>CodeByZ Ads Service</name>
 
     <properties>

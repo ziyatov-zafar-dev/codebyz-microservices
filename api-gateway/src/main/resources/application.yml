@@ -30,7 +30,11 @@ spring:
         - id: chat-api
           uri: http://localhost:8083
           predicates:
-            - Path=/api/chats/**
+            - Path=/api/chats/**        # CHATS API
+        - id: message-ws
+          uri: http://localhost:8083
+          predicates:
+            - Path=/ws/**
         # CHATS API
         - id: message-api
           uri: http://localhost:8083
@@ -46,7 +50,7 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui
-    urls:
+    URLs:
       - name: Auth Service (8081)
         url: http://localhost:8081/v3/api-docs
       - name: Ads Service (8082)

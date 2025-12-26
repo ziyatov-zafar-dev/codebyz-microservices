@@ -6,14 +6,14 @@ import uz.codebyz.auth.location.AddressResponse;
 import uz.codebyz.auth.location.IpWhoIsResponse;
 import uz.codebyz.auth.location.Timezone;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class DeviceResponse {
     private String deviceId;
     private boolean active;
     private String ip;
     private IpWhoIsResponse location;
-    private Instant lastLoginAt;
+    private LocalDateTime lastLoginAt;
     private String deviceName;
     private Boolean me;
     private String browserName;    // Chrome, Firefox, Edge
@@ -106,11 +106,11 @@ public class DeviceResponse {
     }
 
 
-    public Instant getLastLoginAt() {
+    public LocalDateTime getLastLoginAt() {
         return lastLoginAt;
     }
 
-    public void setLastLoginAt(Instant lastLoginAt) {
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
     }
 
@@ -131,7 +131,7 @@ public class DeviceResponse {
     }
 
     public DeviceResponse(String deviceId, boolean active, String ip, IpWhoIsResponse location,
-                          Instant lastLoginAt, String deviceName, Boolean me,
+                          LocalDateTime lastLoginAt, String deviceName, Boolean me,
                           String browserName, String userAgent, DeviceType deviceType,
                           String browserVersion, AddressResponse deviceAddress,
                           String fullAddress) {

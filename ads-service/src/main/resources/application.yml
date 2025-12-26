@@ -37,3 +37,6 @@ springdoc:
     path: /swagger-ui
   api-docs:
     path: /v3/api-docs
+
+app:
+  timezone: Europe/Istanbul

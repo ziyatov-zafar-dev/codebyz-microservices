@@ -15,7 +15,8 @@ import uz.codebyz.ads.security.JwtUser;
 import uz.codebyz.ads.storage.FileStorageService;
 import uz.codebyz.ads.util.FileUtil;
 
-import java.time.Instant;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @RestController
@@ -30,11 +31,14 @@ public class FileController {
 
     private final FileStorageService storageService;
     private final String publicUrl;
+    private final Clock clock;
 
     public FileController(FileStorageService storageService,
-                          @org.springframework.beans.factory.annotation.Value("${storage.ad.public-url:/files}") String publicUrl) {
+                          @org.springframework.beans.factory.annotation.Value("${storage.ad.public-url:/files}") String publicUrl,
+                          Clock clock) {
         this.storageService = storageService;
         this.publicUrl = publicUrl;
+        this.clock = clock;
     }
 
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
@@ -69,7 +73,7 @@ public class FileController {
                     contentType,
                     file.getSize(),
                     FileUtil.toMB(file.getSize()),
-                    Instant.now().toString()
+                    LocalDateTime.now(clock)
             );
             return ResponseEntity.ok(ResponseDto.ok("Yuklandi", data));
         } catch (Exception e) {
@@ -138,6 +142,6 @@ public class FileController {
                                  String mimeType,
                                  long size,
                                  String sizeHuman,
-                                 String uploadedAt) {
+                                 LocalDateTime uploadedAt) {
     }
 }
